@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="assets/anyclaude-wordmark.svg" alt="ANYCLAUDE" width="680">
+  <img src="assets/anyclaude-wordmark.svg" alt="ANYCLAUDE">
 </h1>
 
 <h2 align="center">Keep Claude. Add another one.</h2>
