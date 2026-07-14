@@ -1,19 +1,24 @@
 #!/bin/sh
-# Second Claude Desktop instance, routed to anyclaude-M3 through the :8801 proxy.
+# Second Claude Desktop instance, routed through the configured anyclaude proxy.
 #
 # The isolated userData dir is what keeps this off the subscription profile AND suppresses the
-# app's relocation to a `Claude-3p` profile (see README.md, trap 2 — if a
+# app's relocation to a `Claude-3p` profile (see README.md — if a
 # Claude-3p dir ever appears, isolation broke). The binary is launched directly on purpose:
 # `open -n` does not reliably pass env vars through to the app.
 #
-# Seed configLibrary/ from tools/anyclaude-desktop/configLibrary/ BEFORE the first launch and never
+# Seed configLibrary/ from the repo BEFORE the first launch and never
 # sign in: gateway mode needs no Anthropic login, and an OAuth deep link would land in the default
-# profile anyway (trap 4). The Mac build shows no Developer menu, so the file IS the interface.
+# profile anyway. Some Mac builds show no Developer menu, so the file is the interface.
 set -e
 
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PROFILE="${ANYCLAUDE_PROFILE:-$HOME/ClaudeProfiles/anyclaude-profile}"
+CONFIG="$PROFILE/claude-config"
+COWORK_FILES="$PROFILE/cowork-user-files"
+DESKTOP_CONFIG="$PROFILE/claude_desktop_config.json"
 BIN="/Applications/Claude.app/Contents/MacOS/Claude"
 APP="${ANYCLAUDE_APP:-/Applications/anyclaude.app}"
+PYTHON="${ANYCLAUDE_PYTHON:-$(command -v python3 || true)}"
 
 # `--install-app` puts a launcher named "anyclaude" in /Applications so the Applications folder tells
 # the two instances apart. It only STARTS the instance: the running window is still Claude Desktop's
@@ -21,8 +26,10 @@ APP="${ANYCLAUDE_APP:-/Applications/anyclaude.app}"
 # hand-rolled bundle whose executable exits immediately is rejected by LaunchServices (-10669).
 if [ "${1:-}" = "--install-app" ]; then
   self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
+  [ -x "$PYTHON" ] || { echo "python3 not found on PATH" >&2; exit 1; }
   rm -rf "$APP"
-  osacompile -o "$APP" -e "do shell script \"'$self' > /dev/null 2>&1 &\"" || {
+  osacompile -o "$APP" \
+    -e "do shell script \"ANYCLAUDE_PYTHON='$PYTHON' '$self' --foreground > /dev/null 2>&1 &\"" || {
     echo "osacompile failed (is $(dirname "$APP") writable?)" >&2
     exit 1
   }
@@ -42,23 +49,31 @@ if [ "${1:-}" = "--install-app" ]; then
 fi
 
 [ -x "$BIN" ] || { echo "Claude Desktop not found at $BIN" >&2; exit 1; }
+[ -x "$PYTHON" ] || { echo "python3 not found on PATH" >&2; exit 1; }
+[ -f "$ROOT/config.json" ] || {
+  echo "config.json not found. Copy one from examples/ first (see README.md)." >&2
+  exit 1
+}
+PORT=$("$PYTHON" - "$ROOT/config.json" <<'PY'
+import json
+import sys
 
-# Proof of a live router is a POST /v1/messages; GET /v1/models falls through to Anthropic and 401s.
-# Two attempts: a cold M3 call, or a proxy launchd just restarted, can miss a single short timeout.
+with open(sys.argv[1], encoding="utf-8") as handle:
+    print(int(json.load(handle).get("port", 8801)))
+PY
+)
+
+# This local health check verifies the configured proxy without spending a provider inference call.
 routing=0
 for _ in 1 2; do
-  if curl -s -m 45 http://127.0.0.1:8801/v1/messages \
-      -H "x-api-key: router-dummy" -H "anthropic-version: 2023-06-01" \
-      -H "content-type: application/json" \
-      -d '{"model":"claude-opus-4-8","max_tokens":16,"messages":[{"role":"user","content":"ping"}]}' \
-      | grep -q '"model":"anyclaude'; then
+  if curl -fsS -o /dev/null -m 5 "http://127.0.0.1:$PORT/health"; then
     routing=1
     break
   fi
   sleep 3
 done
 [ "$routing" = 1 ] || {
-  echo "proxy on :8801 is not routing to anyclaude — start com.anyclaude.proxy first" >&2
+  echo "proxy on :$PORT is not routing — start 'python3 proxy.py' from the repo first" >&2
   exit 1
 }
 
@@ -74,12 +89,49 @@ if [ -f "$ASAR" ] && ! grep -qa "CLAUDE_USER_DATA_DIR" "$ASAR"; then
   exit 1
 fi
 
-mkdir -p "$PROFILE"
+mkdir -p "$PROFILE" "$CONFIG" "$COWORK_FILES"
+
+# Claude Code state must not fall back to ~/.claude: that path may be a symlink into a selected
+# workspace and makes Desktop reject the folder as protected. Cowork also defaults to ~/Claude,
+# which collides with ~/claude on a case-insensitive Mac. Keep both inside this isolated profile.
+"$PYTHON" - "$DESKTOP_CONFIG" "$COWORK_FILES" <<'PY'
+import json
+import os
+import stat
+import sys
+import tempfile
+from pathlib import Path
+
+config, cowork_files = map(Path, sys.argv[1:])
+data = json.loads(config.read_text()) if config.exists() else {}
+if not isinstance(data, dict):
+    raise SystemExit(f"Expected a JSON object in {config}")
+current = data.get("coworkUserFilesPath")
+default = Path.home() / "Claude"
+is_default = current is None or (
+    str(Path(current).expanduser().resolve(strict=False)).casefold()
+    == str(default.resolve(strict=False)).casefold()
+)
+if is_default:
+    mode = stat.S_IMODE(config.stat().st_mode) if config.exists() else 0o600
+    data["coworkUserFilesPath"] = str(cowork_files)
+    with tempfile.NamedTemporaryFile(
+        "w", dir=config.parent, prefix=f".{config.name}.", delete=False
+    ) as handle:
+        json.dump(data, handle, indent=2)
+        handle.write("\n")
+        temporary = Path(handle.name)
+    try:
+        os.chmod(temporary, mode)
+        os.replace(temporary, config)
+    finally:
+        temporary.unlink(missing_ok=True)
+PY
 
 # Self-heal the gateway config from the repo seed. Without it the instance boots as a plain,
 # logged-out Claude and the OAuth deep-link trap makes recovery annoying. An existing config is
 # never overwritten, so in-app edits (model labels, extra entries) stick. (Mirrors launch-anyclaude.ps1.)
-SEED="$(cd "$(dirname "$0")" && pwd)/configLibrary"
+SEED="$ROOT/configLibrary"
 if [ -d "$SEED" ] && [ ! -f "$PROFILE/configLibrary/_meta.json" ]; then
   mkdir -p "$PROFILE/configLibrary"
   cp "$SEED"/* "$PROFILE/configLibrary/"
@@ -89,7 +141,7 @@ fi
 # --foreground: become the app (used by the anyclaude.app wrapper — LaunchServices kills a bundle
 # whose executable returns immediately). Otherwise background it and hand the shell back.
 if [ "${1:-}" = "--foreground" ]; then
-  exec env CLAUDE_USER_DATA_DIR="$PROFILE" "$BIN"
+  exec env CLAUDE_USER_DATA_DIR="$PROFILE" CLAUDE_CONFIG_DIR="$CONFIG" "$BIN"
 fi
-CLAUDE_USER_DATA_DIR="$PROFILE" "$BIN" >/dev/null 2>&1 &
+CLAUDE_USER_DATA_DIR="$PROFILE" CLAUDE_CONFIG_DIR="$CONFIG" "$BIN" >/dev/null 2>&1 &
 echo "anyclaude Claude Desktop starting with profile: $PROFILE"

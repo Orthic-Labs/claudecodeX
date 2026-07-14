@@ -1,145 +1,231 @@
-# anyclaude
+<h1 align="center">
+  <img src="assets/anyclaude-wordmark.svg" alt="ANYCLAUDE" width="760">
+</h1>
 
-**Run Claude Code and Claude Desktop on any Anthropic-compatible model — MiniMax, GLM, Kimi, DeepSeek, or a local model.** Keep your Anthropic subscription; add a second, cheaper (or free-tier) brain beside it.
+<p align="center"><strong>Run Claude Code and Claude Desktop on any Anthropic-compatible model.</strong></p>
 
-Providers like [MiniMax](https://platform.minimax.io/docs/token-plan/claude-code), Zhipu GLM, and Moonshot Kimi ship **Anthropic-format endpoints** and document using them from Claude Code. `anyclaude` is a tiny stdlib-only proxy that makes that work across **all three surfaces** — the CLI, the desktop app pointed directly at it, or a **second isolated desktop window running side by side with your subscription Claude**.
+<p align="center">
+  MiniMax · GLM · Kimi · LiteLLM · vLLM · local models<br>
+  <a href="#quick-start">Quick start</a> · <a href="#choose-a-surface">Choose a surface</a> · <a href="docs/macos.md">macOS guide</a> · <a href="#troubleshooting">Troubleshooting</a>
+</p>
 
+![Two isolated Claude Desktop sessions running side by side: subscription Claude and a gateway model](assets/claude-desktop-side-by-side.png)
+
+<p align="center"><sub>Subscription Claude and a gateway-backed Claude Desktop running side by side.</sub></p>
+
+Keep your Anthropic subscription and run a second model beside it. `anyclaude` is a small, standard-library Python proxy that translates Claude's required `claude-*` model names into the model names used by Anthropic-compatible providers.
+
+```text
+Claude Code / Claude Desktop
+           │ Anthropic Messages API, model=claude-*
+           ▼
+    anyclaude · 127.0.0.1:8801
+           │ same request, renamed model + provider key
+           ▼
+ MiniMax / GLM / Kimi / local gateway
 ```
-Claude Code / Claude Desktop  --claude-*-->  anyclaude proxy :8801  --<your model>-->  provider
-```
 
-No fork, no patched binary, no extra Electron download.
+No Claude fork. No patched binary. No additional Electron download. Your provider key stays in an environment variable and the proxy listens on localhost only.
 
----
-
-## Why a proxy at all?
-
-Every surface sends Anthropic-shaped model names (`claude-opus-4-8`, `claude-sonnet-5`, `claude-haiku-*`). Claude **Desktop** additionally *validates* that the configured model looks Anthropic and rejects `MiniMax-M3` / `glm-4.7` outright. So something has to rename the model on the way through. That rename — plus a per-model thinking policy and injecting your key from an env var — is all the proxy does.
-
-## Status
+## What is verified
 
 | Provider | Endpoint | Verified |
 |---|---|---|
-| **MiniMax** (M3) | `api.minimax.io/anthropic` | ✅ CLI + Desktop, Windows & macOS |
-| Zhipu **GLM** | `open.bigmodel.cn/api/anthropic` | ⚠️ config provided, untested — PRs welcome |
-| Moonshot **Kimi** | `api.moonshot.ai/anthropic` | ⚠️ config provided, untested |
-| **Local** (LiteLLM / vLLM / Ollama) | `127.0.0.1:<port>` | ⚠️ config provided, untested |
+| **MiniMax M3** | `api.minimax.io/anthropic` | Claude Code + Desktop, Windows + macOS |
+| Zhipu **GLM** | `open.bigmodel.cn/api/anthropic` | Example config; not yet tested |
+| Moonshot **Kimi** | `api.moonshot.ai/anthropic` | Example config; not yet tested |
+| **Local gateway** | `127.0.0.1:<port>` | Example config; not yet tested |
 
-Only MiniMax is tested (the author's key). The mechanism is identical for the rest — run one, send a PR flipping it to ✅.
+Only MiniMax is currently verified. Other entries describe compatible configurations, not confirmed support.
 
----
+## Choose a surface
 
-## 1. Configure (once, shared by every surface)
+| Surface | Use it when | Isolation |
+|---|---|---|
+| **Claude Code CLI** | You want the simplest setup or a shell alias | Your normal terminal permissions |
+| **Claude Desktop, direct** | You are happy to switch the stock app between Anthropic and a gateway | Reuses the stock Desktop profile |
+| **Claude Desktop, second instance** | You want subscription Claude and a gateway model side by side | Separate Desktop, Claude Code, and Cowork state |
+
+## Quick start
+
+### Prerequisites
+
+- Python 3.9 or newer
+- Claude Code and/or the latest Claude Desktop
+- An Anthropic-compatible provider endpoint and API key
+- `curl` for the verification command
+
+### 1. Clone and configure
 
 ```bash
-cp examples/minimax.json config.json      # or glm.json / kimi.json / local.json
+git clone https://github.com/bogusyogi/anyclaude.git
+cd anyclaude
+cp examples/minimax.json config.json
 ```
+
+Use `glm.json`, `kimi.json`, or `local.json` instead when appropriate. `config.json` is ignored by Git.
 
 ```json
 {
   "port": 8801,
-  "upstream": { "host": "api.minimax.io", "prefix": "/anthropic",
-                "scheme": "https", "auth_header": "x-api-key", "key_env": "MINIMAX_API_KEY" },
+  "upstream": {
+    "host": "api.minimax.io",
+    "prefix": "/anthropic",
+    "scheme": "https",
+    "auth_header": "x-api-key",
+    "key_env": "MINIMAX_API_KEY"
+  },
   "models": {
     "default": { "name": "MiniMax-M3", "thinking": "adaptive" },
-    "haiku":   { "name": "MiniMax-M3", "thinking": "disabled" }
+    "haiku": { "name": "MiniMax-M3", "thinking": "disabled" }
   }
 }
 ```
 
-- **`key_env`** — the *name* of the env var holding your key. The key is never written to disk or committed; the proxy reads it at runtime.
-- **`models`** — a keyword found in the incoming `claude-*` name → an upstream model + thinking policy. `default` is the fallback; a `haiku` entry with `"thinking": "disabled"` gives a no-reasoning fast lane. Point tiers at *different* upstream models for real routing (e.g. GLM `glm-4.7` vs `glm-4.7-flash`).
+- `key_env` is the name of the environment variable containing the provider key. Never put the key in `config.json`.
+- `models` matches a keyword in the incoming Claude model name. `default` is the fallback.
+- A `haiku` route with thinking disabled provides a fast lane. Routes can also point to different upstream models.
 
-Set your key (never goes in the repo):
+### 2. Set the provider key
+
+macOS or Linux:
 
 ```bash
-# macOS/Linux — add to ~/.zshrc or ~/.bashrc
 export MINIMAX_API_KEY="sk-..."
 ```
+
+Add the export to `~/.zprofile` on macOS if a login service will start the proxy. Use `~/.zshrc` or `~/.bashrc` for terminal-only use.
+
+Windows PowerShell:
+
 ```powershell
-# Windows — persists across reboots; open a new terminal after
 setx MINIMAX_API_KEY "sk-..."
 ```
 
-Start the proxy:
+Open a new terminal after `setx`.
+
+### 3. Start and verify the proxy
 
 ```bash
-python proxy.py            # foreground, to watch it
-# or background it / autostart it — see the installers below
+python3 proxy.py
 ```
 
-Verify it routes (the one real test — "Test connection" buttons lie):
+In a second terminal:
 
 ```bash
-curl -s http://127.0.0.1:8801/v1/messages -H "x-api-key: router-dummy" \
-  -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+curl -fsS http://127.0.0.1:8801/health
+```
+
+This checks the local proxy without contacting the provider. Then run one real routing test:
+
+```bash
+curl -fsS http://127.0.0.1:8801/v1/messages \
+  -H "x-api-key: router-dummy" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
   -d '{"model":"claude-opus-4-8","max_tokens":16,"messages":[{"role":"user","content":"ping"}]}'
-# -> "model":"MiniMax-M3" ... means it's live
 ```
 
----
+Success means the response names the upstream model and `proxy.log` records `status=200`. This request consumes a small provider inference call.
 
-## 2. Pick your surface
-
-### A. Claude Code (CLI) — simplest, no isolation needed
-
-Point Claude Code at the proxy with env vars (the provider's own docs describe the same thing, minus the rename):
+## Use Claude Code CLI
 
 ```bash
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8801"
-export ANTHROPIC_AUTH_TOKEN="router-dummy"          # placeholder; real key is in the proxy's env
+export ANTHROPIC_AUTH_TOKEN="router-dummy"
 export ANTHROPIC_MODEL="claude-opus-4-8"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5-20251001"
 claude
 ```
 
-Wrap those in a shell alias (`anyclaude`) so plain `claude` stays on your subscription. `/status` inside Claude Code should show the proxy URL.
+Put these in a shell function or alias such as `anyclaude`; leave plain `claude` on your Anthropic subscription. `/status` should show the local proxy URL.
 
-### B. Claude Desktop, direct — replaces your subscription in the app until you switch back
+## Use Claude Desktop directly
 
-Developer → Configure Third-Party Inference:
+Open **Developer → Configure Third-Party Inference** and set:
 
-- Provider **Gateway**, Base URL `http://127.0.0.1:8801`, Credential kind **Static API key**, key `router-dummy`, Auth scheme **x-api-key**, Model discovery **off**.
-- Add models with **Anthropic** names (`claude-opus-4-8` → tier opus, default; add `claude-haiku-4-5-20251001` → tier haiku for the fast lane). The proxy renames them upstream.
+| Setting | Value |
+|---|---|
+| Provider | Gateway |
+| Base URL | `http://127.0.0.1:8801` |
+| Credential kind | Static API key |
+| API key | `router-dummy` |
+| Auth scheme | `x-api-key` |
+| Model discovery | Off |
 
-Switch back to Anthropic anytime by setting the provider to Anthropic. Simple, but it's one-at-a-time.
+Add Anthropic-shaped model names such as `claude-opus-4-8` and `claude-haiku-4-5-20251001`. The proxy performs the upstream rename. Switch the provider back to Anthropic to restore the normal app.
 
-### C. Claude Desktop, second instance — run both at once, side by side ⭐
+## Run a second Claude Desktop instance
 
-The headline feature: a fully isolated second Claude Desktop with its own profile and its own taskbar button, on your gateway model, while your subscription Claude keeps running untouched.
+The launchers seed the gateway configuration and isolate the second instance from subscription Claude.
 
-**Windows:**
+Windows:
+
 ```powershell
-powershell -ExecutionPolicy Bypass -File windows\install.ps1   # shortcut + hidden proxy autostart
+powershell -ExecutionPolicy Bypass -File windows\install.ps1
 ```
-**macOS:**
+
+macOS:
+
 ```bash
-./mac/anyclaude-macos.sh --install-app     # puts an "anyclaude" launcher in /Applications (Claude's icon)
-./mac/anyclaude-macos.sh                    # or just run it directly
+./mac/anyclaude-macos.sh --install-app
+./mac/anyclaude-macos.sh
 ```
 
-Then click the shortcut / app. A fresh window opens with its own taskbar (Windows) / Dock (macOS) entry. The launcher seeds the gateway config into the new profile automatically (from `configLibrary/`, no secrets) — **so on Windows you can skip the settings UI, and on macOS you must, because the Mac build has no Developer menu; the config file is the only interface.**
+Start the proxy before opening the second instance. The macOS launcher isolates:
 
-> **Do not sign in first.** Gateway mode needs no Anthropic login, and an OAuth `claude://` deep link lands in the *default* profile, not the isolated one. The seeded config means you never need to.
+- Desktop state with `CLAUDE_USER_DATA_DIR`
+- Claude Code state with `CLAUDE_CONFIG_DIR`
+- Cowork-owned files inside the isolated profile
 
----
+See the [macOS guide](docs/macos.md) for the Dock launcher, case-insensitive `~/Claude` collision, and the optional ask-on-sandbox-escape policy.
 
-## The four things that will bite you (all surfaces)
+> Do not sign into the isolated Gateway profile. Gateway mode does not require an Anthropic login, and OAuth deep links target the default profile.
 
-1. **The Gateway/AUTH_TOKEN field must be a placeholder** (`router-dummy`). Your real key is injected by the proxy from its env var. Putting the real key in the app means it bypasses the proxy's rename and fails.
-2. **Isolation is via `CLAUDE_USER_DATA_DIR`** (surface C). The launcher sets it so the second instance gets its own profile *and* single-instance lock. It's an **undocumented** Anthropic env var — a Desktop update could drop it; the launchers detect that and warn instead of silently opening a normal Claude.
-3. **`Claude-3p` is the canary (Desktop).** If you ever apply a gateway config to your *stock* app without the env var, Desktop relocates to `%LOCALAPPDATA%\Claude-3p` (macOS: `~/Library/Application Support/Claude-3p`) and boots into gateway mode. If that dir appears, isolation broke — delete it; your subscription profile (`Claude`) is untouched.
-4. **"Test connection" is a false negative.** It probes `/v1/models`, which many gateways don't serve. Ignore it — the only proof is a `status=200` line in `proxy.log` (or the curl above).
+## Troubleshooting
 
-## Separate taskbar / Dock button (surface C)
+### `CONNECT tunnel failed, response 403`
 
-Claude Desktop never sets an AppUserModelID, so both instances would otherwise group together. On **Windows**, `separate-taskbar.ps1` sets a per-window AUMID (`PKEY_AppUserModel_ID`) so the second instance gets its own button, keeping Claude's icon; the launcher re-applies it each start (the AUMID lives on the window handle). On **macOS**, `--install-app` builds a tiny `osacompile` wrapper app that wears Claude's icon (copy `electron.icns`, delete `Assets.car`, `lsregister`) so the Dock and ⌘-Tab tell them apart.
+Claude Desktop can inject a managed sandbox policy that allows only Anthropic and localhost. “Bypass permissions” does not override that network policy. Use the [macOS ask-on-escape fix](docs/macos.md#make-blocked-bash-operations-ask-instead-of-hard-deny) to retain sandboxing while restoring approval prompts.
+
+### A folder is skipped because it is protected or is the home/root directory
+
+Older macOS launchers let Claude Code state fall back to `~/.claude` and Cowork files to `~/Claude`. Either can overlap the selected workspace through a symlink or case-insensitive path. The current launcher places both inside `~/ClaudeProfiles/anyclaude-profile`.
+
+### Desktop “Test connection” fails
+
+Many gateways do not expose `/v1/models`, which Desktop probes. Use the Messages API curl request above or confirm `status=200` in `proxy.log`.
+
+### A `Claude-3p` directory appears
+
+The second-instance isolation did not apply. Stop the gateway instance and check that your Claude Desktop build still contains `CLAUDE_USER_DATA_DIR`. The launcher refuses to continue when support disappears. Your normal `Claude` profile is separate.
+
+### The macOS app cannot see the provider key
+
+GUI launchers do not reliably inherit `~/.zshrc`. Keep the proxy running separately, or expose the key to its login service through `~/.zprofile`. Never place the key in the app's Gateway API-key field; that field must remain `router-dummy`.
+
+## Project map
+
+| Path | Purpose |
+|---|---|
+| `proxy.py` | Local model-name and thinking-policy proxy |
+| `examples/` | Provider configuration templates |
+| `configLibrary/` | Secret-free Claude Desktop Gateway seed |
+| `mac/` | Isolated macOS launcher |
+| `windows/` | Windows launcher, installer, and taskbar separation |
+| `docs/macos.md` | macOS setup and sandbox policy |
+| `BRAND.md` | Wordmark, color, composition, and voice rules |
+| `tests/` | Offline regression checks for launcher invariants |
+| `AGENTS.md` | Repository contract and verification commands for coding agents |
 
 ## Security
 
-- Your key lives only in an environment variable. `config.json` and `proxy.log` are gitignored. Nothing in this repo contains a key.
-- The proxy binds `127.0.0.1` only — not reachable off your machine.
+- The provider key is read from the named environment variable and is never required in a tracked file.
+- The proxy binds to `127.0.0.1`, not the LAN.
+- `config.json`, `.env`, keys, and logs are ignored by Git.
+- Keep Claude Code sandboxing enabled for untrusted repositories. Prefer explicit approval prompts over `Bypass permissions` or a fully unrestricted shell.
+- Review provider terms and data handling before sending code or prompts upstream.
 
 ## License
 
-MIT. Independent community tool, not affiliated with Anthropic or any model provider. Use each provider's API per its own terms — MiniMax, for one, [officially documents Claude Code use](https://platform.minimax.io/docs/token-plan/claude-code).
+MIT. Independent community software; not affiliated with Anthropic or any model provider. MiniMax [documents Claude Code use](https://platform.minimax.io/docs/token-plan/claude-code); verify the current terms and endpoints for your provider.

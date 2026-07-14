@@ -78,6 +78,19 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def _health(self):
+        payload = json.dumps({
+            "status": "ok",
+            "upstream": f"{SCHEME}://{HOST}{PREFIX}",
+            "models": {name: spec["name"] for name, spec in MODELS.items()},
+        }).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.wfile.write(payload)
+
     def _proxy(self):
         length = int(self.headers.get("Content-Length", 0) or 0)
         body = self.rfile.read(length) if length else b""
@@ -140,7 +153,12 @@ class Handler(BaseHTTPRequestHandler):
             conn.close()
 
     do_POST = _proxy
-    do_GET = _proxy
+
+    def do_GET(self):
+        if self.path == "/health":
+            self._health()
+        else:
+            self._proxy()
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@
 config.json
 proxy.log
 *.log
+__pycache__/
+*.pyc
 
 # Key material must never land here — belt and braces.
 *.key
