@@ -24,8 +24,9 @@
   <sub>Left: subscription Claude on Opus 4.8. Right: an isolated anyclaude profile on MiniMax M3. The taskbar shows both running simultaneously.</sub>
 </p>
 
-> [!IMPORTANT]
-> **anyclaude does not replace, patch, or reroute your subscription Claude.** Your normal Claude stays exactly where it is. The launcher opens a second, isolated Claude profile pointed at another model provider, so both windows can remain open and work independently.
+### Your Claude stays your Claude
+
+anyclaude does not replace, patch, or reroute your subscription Claude. The launcher opens a second, isolated Claude profile pointed at another model provider, so both windows remain open and work independently.
 
 ## What you get
 
