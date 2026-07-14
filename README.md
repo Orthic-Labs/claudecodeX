@@ -1,8 +1,6 @@
 <h1 align="center">
-  <img src="assets/anyclaude-wordmark.svg" alt="ANYCLAUDE">
+  <img src="assets/social-preview.png" alt="anyclaude: run two Claude Desktop instances side by side. Your Anthropic subscription in one, MiniMax, GLM, Kimi, or a local gateway in the other. Both open at once.">
 </h1>
-
-<h2 align="center">Run two Claude Desktop instances side by side</h2>
 
 <p align="center">
   Use your Anthropic subscription in the first. Use MiniMax M3 or another third-party Anthropic-compatible provider in the second.<br>
@@ -19,11 +17,8 @@
   <a href="docs/macos.md">macOS</a>
 </p>
 
-![One Windows desktop with two Claude Desktop sessions running simultaneously](assets/claude-desktop-side-by-side.png)
-
 <p align="center">
-  <strong>One Windows desktop. Two live Claude sessions.</strong><br>
-  <sub>Left: subscription Claude on Opus 4.8. Right: an isolated anyclaude profile on MiniMax M3. The taskbar shows both running simultaneously.</sub>
+  <sub>Real proof, in the card above: left is subscription Claude on Opus 4.8, right is an isolated anyclaude profile on MiniMax M3, and the taskbar shows both running at once.</sub>
 </p>
 
 ### Your Claude stays your Claude
