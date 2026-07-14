@@ -1,0 +1,15 @@
+{
+  "_comment": "Zhipu GLM. UNTESTED — verify api path/model names against current GLM docs, then PR the ✅.",
+  "port": 8801,
+  "upstream": {
+    "host": "open.bigmodel.cn",
+    "prefix": "/api/anthropic",
+    "scheme": "https",
+    "auth_header": "x-api-key",
+    "key_env": "GLM_API_KEY"
+  },
+  "models": {
+    "default": { "name": "glm-4.7", "thinking": "adaptive" },
+    "haiku":   { "name": "glm-4.7-flash", "thinking": "disabled" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "Moonshot Kimi. UNTESTED — verify api path/model names against current Moonshot docs, then PR the ✅.",
+  "port": 8801,
+  "upstream": {
+    "host": "api.moonshot.ai",
+    "prefix": "/anthropic",
+    "scheme": "https",
+    "auth_header": "authorization",
+    "key_env": "MOONSHOT_API_KEY"
+  },
+  "models": {
+    "default": { "name": "kimi-k2", "thinking": "adaptive" },
+    "haiku":   { "name": "kimi-k2", "thinking": "disabled" }
+  }
+}

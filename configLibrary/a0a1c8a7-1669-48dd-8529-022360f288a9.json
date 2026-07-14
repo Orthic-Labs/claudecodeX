@@ -1,0 +1,31 @@
+{
+  "inferenceGatewayBaseUrl": "http://127.0.0.1:8801",
+  "inferenceGatewayApiKey": "router-dummy",
+  "inferenceGatewayAuthScheme": "x-api-key",
+  "modelDiscoveryEnabled": false,
+  "inferenceModels": [
+    {
+      "name": "claude-opus-4-8",
+      "labelOverride": "Gateway (thinking)",
+      "supports1m": false,
+      "anthropicFamilyTier": "opus",
+      "isFamilyDefault": true
+    },
+    {
+      "name": "claude-sonnet-5",
+      "labelOverride": "Gateway (thinking)",
+      "supports1m": false,
+      "anthropicFamilyTier": "sonnet",
+      "isFamilyDefault": true
+    },
+    {
+      "name": "claude-haiku-4-5-20251001",
+      "labelOverride": "Gateway (fast)",
+      "supports1m": false,
+      "anthropicFamilyTier": "haiku",
+      "isFamilyDefault": true
+    }
+  ],
+  "inferenceProvider": "gateway",
+  "inferenceCredentialKind": "static"
+}

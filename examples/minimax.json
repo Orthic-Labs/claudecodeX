@@ -1,0 +1,14 @@
+{
+  "port": 8801,
+  "upstream": {
+    "host": "api.minimax.io",
+    "prefix": "/anthropic",
+    "scheme": "https",
+    "auth_header": "x-api-key",
+    "key_env": "MINIMAX_API_KEY"
+  },
+  "models": {
+    "default": { "name": "MiniMax-M3", "thinking": "adaptive" },
+    "haiku":   { "name": "MiniMax-M3", "thinking": "disabled" }
+  }
+}

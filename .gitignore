@@ -1,0 +1,8 @@
+# Never commit a live config (it names your key's env var and may hold a real host) or logs.
+config.json
+proxy.log
+*.log
+
+# Key material must never land here — belt and braces.
+*.key
+.env

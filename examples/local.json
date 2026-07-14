@@ -1,0 +1,15 @@
+{
+  "_comment": "Local gateway (LiteLLM / vLLM / any Anthropic-format server). UNTESTED. Point host+port at your server; set key_env to whatever your server expects (a dummy value is fine for most local setups — still supply it via env).",
+  "port": 8801,
+  "upstream": {
+    "host": "127.0.0.1:4000",
+    "prefix": "",
+    "scheme": "http",
+    "auth_header": "x-api-key",
+    "key_env": "LOCAL_API_KEY"
+  },
+  "models": {
+    "default": { "name": "my-model", "thinking": null },
+    "haiku":   { "name": "my-small-model", "thinking": null }
+  }
+}

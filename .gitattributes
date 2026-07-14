@@ -1,0 +1,5 @@
+# Shell scripts must stay LF or the shebang breaks on macOS/Linux.
+*.sh text eol=lf
+# PowerShell/VBS are Windows-only; leave them CRLF.
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
