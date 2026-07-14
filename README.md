@@ -2,15 +2,15 @@
   <img src="assets/anyclaude-wordmark.svg" alt="ANYCLAUDE">
 </h1>
 
-<h2 align="center">Keep Claude. Add another one.</h2>
+<h2 align="center">Run two Claude Desktop instances side by side</h2>
 
 <p align="center">
-  Run your Anthropic subscription and a second, isolated Claude Desktop on MiniMax M3—or another Anthropic-compatible endpoint—<br>
-  <strong>at the same time, on the same computer.</strong>
+  Use your Anthropic subscription in the first. Use MiniMax M3—or another third-party Anthropic-compatible provider—in the second.<br>
+  <strong>Both run simultaneously on the same computer.</strong>
 </p>
 
 <p align="center">
-  <a href="#get-the-second-claude-window"><strong>Get the second window</strong></a> ·
+  <a href="#set-up-the-second-claude-instance"><strong>Set up the second instance</strong></a> ·
   <a href="docs/windows.md">Windows guide</a> ·
   <a href="docs/macos.md">macOS guide</a> ·
   <a href="#use-it-with-claude-code">Claude Code</a> ·
@@ -40,7 +40,7 @@ anyclaude does not replace, patch, or reroute your subscription Claude. The laun
 
 Use subscription Claude for one task while another model handles a second repository, a long-running job, a comparison pass, or separate work in parallel. You keep the Claude interface and workflows you already know without choosing one provider for the whole app.
 
-## Get the second Claude window
+## Set up the second Claude instance
 
 You need Python 3.9+, Claude Desktop, and an API key for an Anthropic-compatible endpoint. The proxy is standard-library Python: there is no `pip install`, Claude fork, patched binary, or second Electron download.
 
