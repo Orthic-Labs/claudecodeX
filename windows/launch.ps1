@@ -57,6 +57,27 @@ if ((Test-Path $asar) -and -not ([System.IO.File]::ReadAllText($asar, [System.Te
 
 New-Item -ItemType Directory -Force -Path $profileDir, $claudeConfigDir, $coworkDir | Out-Null
 
+# The isolated CLAUDE_CONFIG_DIR is meant to separate auth and Desktop state, but it also hides the
+# skills and subagents already installed in ~/.claude: they simply do not exist in this profile, so
+# Claude Code inside the anyclaude window silently has none of them. Link them back rather than copy,
+# so the originals stay the single source of truth and edits land in both instances. Junctions are used
+# because they need no elevation or Developer Mode, unlike symlinks.
+#
+# settings.json is deliberately NOT linked. It commonly pins an Anthropic-only model name, which the
+# gateway provider does not serve. Set ANYCLAUDE_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
+if ($env:ANYCLAUDE_SHARE_CLAUDE_CODE -ne '0') {
+    foreach ($share in 'skills', 'agents') {
+        $shareSource = Join-Path $HOME ".claude\$share"
+        $shareTarget = Join-Path $claudeConfigDir $share
+        if (-not (Test-Path $shareSource)) { continue }
+        $existing = Get-Item $shareTarget -Force -ErrorAction SilentlyContinue
+        # Re-point a stale link, but never clobber a real directory the user put here.
+        if ($existing -and $existing.LinkType) { $existing.Delete() }
+        elseif ($existing) { continue }
+        New-Item -ItemType Junction -Path $shareTarget -Target $shareSource -ErrorAction SilentlyContinue | Out-Null
+    }
+}
+
 # Keep embedded Claude Code and Cowork state out of the subscription profile. Preserve a custom
 # Cowork path; migrate only the default ~/Claude location into the isolated anyclaude profile.
 if (Test-Path $desktopConfig) {

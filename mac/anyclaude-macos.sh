@@ -91,6 +91,25 @@ fi
 
 mkdir -p "$PROFILE" "$CONFIG" "$COWORK_FILES"
 
+# The isolated CLAUDE_CONFIG_DIR is meant to separate auth and Desktop state, but it also hides the
+# skills and subagents already installed in ~/.claude: they simply do not exist in this profile, so
+# Claude Code inside the anyclaude window silently has none of them. Link them back rather than copy,
+# so the originals stay the single source of truth and edits land in both instances.
+#
+# settings.json is deliberately NOT linked. It commonly pins an Anthropic-only model name, which the
+# gateway provider does not serve. Set ANYCLAUDE_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
+if [ "${ANYCLAUDE_SHARE_CLAUDE_CODE:-1}" = 1 ]; then
+  for share in skills agents; do
+    src="$HOME/.claude/$share"
+    dst="$CONFIG/$share"
+    if [ -d "$src" ]; then
+      # Re-point a stale or broken link, but never clobber a real directory the user put here.
+      [ -L "$dst" ] && rm -f "$dst"
+      [ -e "$dst" ] || ln -s "$src" "$dst"
+    fi
+  done
+fi
+
 # Claude Code state must not fall back to ~/.claude: that path may be a symlink into a selected
 # workspace and makes Desktop reject the folder as protected. Cowork also defaults to ~/Claude,
 # which collides with ~/claude on a case-insensitive Mac. Keep both inside this isolated profile.

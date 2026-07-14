@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -62,6 +64,75 @@ class MacLauncherTest(unittest.TestCase):
     def test_routing_check_uses_configured_port_without_paid_inference(self):
         self.assertIn('"http://127.0.0.1:$PORT/health"', self.launcher)
         self.assertNotIn('"model":"anyclaude', self.launcher)
+
+    def _run_share_block(self, home, config, environment=None):
+        """Execute the launcher's skills/agents linking block against a fake HOME."""
+        marker = 'if [ "${ANYCLAUDE_SHARE_CLAUDE_CODE:-1}" = 1 ]; then'
+        block = marker + self.launcher.split(marker, 1)[1].split("\nfi\n", 1)[0] + "\nfi\n"
+        subprocess.run(
+            ["sh", "-e", "-c", block],
+            check=True,
+            env={
+                "PATH": os.environ["PATH"],
+                "HOME": str(home),
+                "CONFIG": str(config),
+                **(environment or {}),
+            },
+        )
+
+    def test_skills_and_agents_are_shared_without_leaking_settings(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root) / "home"
+            config = Path(root) / "config"
+            config.mkdir(parents=True)
+            for share in ("skills", "agents"):
+                (home / ".claude" / share).mkdir(parents=True)
+            (home / ".claude" / "settings.json").write_text('{"model": "opus"}')
+
+            self._run_share_block(home, config)
+
+            for share in ("skills", "agents"):
+                self.assertTrue((config / share).is_symlink())
+                self.assertEqual(
+                    (config / share).resolve(), (home / ".claude" / share).resolve()
+                )
+            # A pinned Anthropic-only model must never follow the skills into the gateway profile.
+            self.assertFalse((config / "settings.json").exists())
+
+    def test_share_repairs_a_stale_link_but_never_clobbers_a_real_directory(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root) / "home"
+            config = Path(root) / "config"
+            config.mkdir(parents=True)
+            (home / ".claude" / "skills").mkdir(parents=True)
+            (home / ".claude" / "agents").mkdir(parents=True)
+
+            # A link left pointing at a profile that no longer exists must re-point, not stay broken.
+            (config / "skills").symlink_to(Path(root) / "gone")
+            # A real directory is the user's own state: linking over it would destroy it.
+            (config / "agents").mkdir()
+            (config / "agents" / "mine.md").write_text("keep me")
+
+            self._run_share_block(home, config)
+
+            self.assertEqual(
+                (config / "skills").resolve(), (home / ".claude" / "skills").resolve()
+            )
+            self.assertFalse((config / "agents").is_symlink())
+            self.assertEqual((config / "agents" / "mine.md").read_text(), "keep me")
+
+    def test_share_can_be_sealed_off(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root) / "home"
+            config = Path(root) / "config"
+            config.mkdir(parents=True)
+            (home / ".claude" / "skills").mkdir(parents=True)
+
+            self._run_share_block(
+                home, config, {"ANYCLAUDE_SHARE_CLAUDE_CODE": "0"}
+            )
+
+            self.assertFalse((config / "skills").exists())
 
 
 if __name__ == "__main__":

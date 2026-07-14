@@ -48,6 +48,17 @@ Both `CLAUDE_USER_DATA_DIR` and `CLAUDE_CONFIG_DIR` are intentionally set. Isola
 
 The launcher also migrates only Cowork's default `~/Claude` location. On a case-insensitive Mac, `~/Claude` and `~/claude` are the same directory; if the latter is your repository, Desktop otherwise rejects it as protected storage. A custom Cowork location is preserved.
 
+## What the launcher shares
+
+| State | Shared how |
+|---|---|
+| `~/.claude/skills` | Symlinked into the isolated `claude-config`, refreshed on every launch |
+| `~/.claude/agents` | Symlinked into the isolated `claude-config`, refreshed on every launch |
+
+Isolation is for auth and Desktop state, not for your skill library. Without these links the isolated `CLAUDE_CONFIG_DIR` contains no `skills/` or `agents/` at all, so Claude Code inside the anyclaude window silently has none of the skills and subagents you installed. They are linked rather than copied, so `~/.claude` stays the single source of truth and edits appear in both instances. The launcher re-points a stale link but never overwrites a real directory you placed there.
+
+`settings.json` is deliberately not shared. It commonly pins an Anthropic-only model name that the gateway provider does not serve, so linking it would fight the gateway route. Hooks defined there therefore do not run in the anyclaude window. Set `ANYCLAUDE_SHARE_CLAUDE_CODE=0` to seal the profile completely.
+
 ## Provider keys and GUI apps
 
 A process opened from Finder or the Dock does not reliably inherit exports from `~/.zshrc`. The safest first-run workflow is:

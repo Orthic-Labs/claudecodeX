@@ -40,6 +40,17 @@ The anyclaude shortcut starts the localhost proxy when needed, verifies `/health
 
 The launcher sets both `CLAUDE_USER_DATA_DIR` and `CLAUDE_CONFIG_DIR`. It moves only Cowork's default location into the isolated profile; an existing custom Cowork path is preserved.
 
+## What is shared
+
+| State | Shared how |
+|---|---|
+| `~/.claude\skills` | Junction into the isolated `claude-config`, refreshed on every launch |
+| `~/.claude\agents` | Junction into the isolated `claude-config`, refreshed on every launch |
+
+Isolation is for auth and Desktop state, not for your skill library: without these links, Claude Code inside the anyclaude window would silently have no skills or subagents at all. Junctions are used because they need no elevation or Developer Mode. The launcher re-points a stale link but never overwrites a real directory you placed there.
+
+`settings.json` is deliberately not shared. It commonly pins an Anthropic-only model name that the gateway provider does not serve. Hooks defined there therefore do not run in the anyclaude window. Set `ANYCLAUDE_SHARE_CLAUDE_CODE=0` to seal the profile completely.
+
 ## What the installer changes
 
 - Creates `%USERPROFILE%\Desktop\anyclaude.lnk`
