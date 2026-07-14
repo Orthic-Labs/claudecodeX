@@ -53,6 +53,21 @@ Tanker is for the name and short display statements only. It must not replace re
 
 Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances side by side.** Name the provider in each instance and state that both run simultaneously before explaining the proxy. Do not substitute a clever slogan for those facts. Never use em dashes. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
 
+## Social preview
+
+- Asset: `assets/social-preview.png` (1280x640), the image GitHub shows when the repository is linked anywhere off-site
+- Source: `assets/social-preview.html`, rendered at exactly 1280x640
+
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=old --disable-gpu \
+  --screenshot=assets/social-preview.png --window-size=1280,640 --hide-scrollbars \
+  "file://$PWD/assets/social-preview.html"
+```
+
+The card is the split composition in one frame: the wordmark and the literal claim on the left, the real two-session desktop framed as evidence on the right, the route line ending in terracotta. The screenshot is deliberately scaled down until its session text is texture rather than readable content. Do not crop it into a single window: the two windows and the taskbar are the entire claim.
+
+GitHub has no API for this field. Upload it at **Settings > General > Social preview** after changing it.
+
 ## Asset provenance
 
 The current wordmark was outlined from the project's existing Tanker font resource, so GitHub renders the intended letterforms without redistributing an editable font file. The side-by-side screenshot is real product evidence supplied by the project owner; it includes the Windows taskbar to prove both sessions share one desktop.

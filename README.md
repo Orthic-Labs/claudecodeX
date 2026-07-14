@@ -6,15 +6,17 @@
 
 <p align="center">
   Use your Anthropic subscription in the first. Use MiniMax M3 or another third-party Anthropic-compatible provider in the second.<br>
-  <strong>Both run simultaneously on the same computer.</strong>
+  <strong>Both run simultaneously on the same computer.</strong><br>
+  The second instance talks to the provider you configure, so its work does not draw down your Anthropic usage limits.
 </p>
 
 <p align="center">
   <a href="#set-up-the-second-claude-instance"><strong>Set up the second instance</strong></a> ·
-  <a href="docs/windows.md">Windows guide</a> ·
-  <a href="docs/macos.md">macOS guide</a> ·
+  <a href="#how-it-works">How it works</a> ·
   <a href="#use-it-with-claude-code">Claude Code</a> ·
-  <a href="#how-it-works">How it works</a>
+  <a href="#provider-status">Provider status</a> ·
+  <a href="docs/windows.md">Windows</a> ·
+  <a href="docs/macos.md">macOS</a>
 </p>
 
 ![One Windows desktop with two Claude Desktop sessions running simultaneously](assets/claude-desktop-side-by-side.png)
@@ -34,11 +36,17 @@ anyclaude does not replace, patch, or reroute your subscription Claude. The laun
 |---|---|
 | Opens normally | Opens from the **anyclaude** shortcut |
 | Uses your Anthropic subscription | Uses MiniMax, GLM, Kimi, LiteLLM, vLLM, or a local gateway |
-| Keeps its existing chats, projects, and settings | Keeps separate Desktop, Claude Code, and Cowork state |
+| Keeps its existing chats, projects, and settings | Separate Desktop, Claude Code, and Cowork state; shares your `~/.claude` skills and subagents |
 | Runs Anthropic models | Runs the upstream model you configure |
 | **Stays open** | **Runs beside it at the same time** |
 
-Use subscription Claude for one task while another model handles a second repository, a long-running job, a comparison pass, or separate work in parallel. You keep the Claude interface and workflows you already know without choosing one provider for the whole app.
+Three reasons people run the second instance:
+
+- **Keep working after you hit a limit.** The second window bills to your provider, not to Anthropic, so a long or repetitive job there leaves your subscription capacity intact.
+- **Work on two things at once.** Two live sessions, two repositories, one desktop.
+- **Compare models on the same task.** Same interface, same prompt, different upstream model.
+
+You keep the Claude interface and workflows you already know without committing the whole app to one provider.
 
 ## Set up the second Claude instance
 
@@ -212,6 +220,12 @@ Older launchers let Claude Code or Cowork state overlap the selected workspace. 
 ### Desktop “Test connection” fails
 
 Many gateways do not expose `/v1/models`, which Desktop probes. Use `/health`, the real Messages API request above, or confirm `status=200` in `proxy.log`.
+
+### Your skills or subagents are missing in the anyclaude window
+
+Both launchers link `~/.claude/skills` and `~/.claude/agents` into the isolated profile on every start, so the library you already have resolves in both instances. If a skill is still missing, confirm it exists in `~/.claude` and that nothing has replaced the link with a real directory, which the launcher will not overwrite.
+
+`settings.json` is deliberately not linked. It commonly pins an Anthropic-only model name, which the gateway provider does not serve, so sharing it would break the second instance. The cost is that hooks defined there do not run in the anyclaude window. Set `ANYCLAUDE_SHARE_CLAUDE_CODE=0` if you want a fully sealed profile with no sharing at all.
 
 ### A `Claude-3p` directory appears
 
