@@ -1,6 +1,14 @@
 # macOS setup and Claude Desktop sandbox policy
 
-This guide covers the behavior that differs from Windows: isolated Desktop profiles, GUI environment variables, case-insensitive paths, and Claude Desktop's managed Bash sandbox.
+The macOS launcher opens an isolated anyclaude profile beside the normal subscription Claude app, so both sessions can remain active on one Mac. This guide covers isolated profiles, GUI environment variables, case-insensitive paths, and Claude Desktop's managed Bash sandbox.
+
+## Daily use
+
+1. Start the localhost proxy.
+2. Open **Claude** normally for the Anthropic subscription session.
+3. Open `/Applications/anyclaude.app` for the gateway-backed session.
+
+Both use the installed Claude Desktop binary, but their Desktop, embedded Claude Code, and default Cowork state remain separate.
 
 ## Install the isolated Dock launcher
 

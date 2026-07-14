@@ -3,11 +3,23 @@
 $ErrorActionPreference = 'Stop'
 $root       = Split-Path $PSScriptRoot -Parent           # repo root
 $profileDir = Join-Path $env:LOCALAPPDATA 'anyclaude\profile'
+$claudeConfigDir = Join-Path $profileDir 'claude-config'
+$coworkDir  = Join-Path $profileDir 'cowork-user-files'
+$desktopConfig = Join-Path $profileDir 'claude_desktop_config.json'
 $cfg        = Join-Path $root 'config.json'
 
 if (-not (Test-Path $cfg)) { throw "config.json not found. Copy one from examples\ first (see README)." }
-$port = (Get-Content $cfg -Raw | ConvertFrom-Json).port
+$config = Get-Content $cfg -Raw | ConvertFrom-Json
+$port = $config.port
 if (-not $port) { $port = 8801 }
+$keyEnv = $config.upstream.key_env
+if (-not [Environment]::GetEnvironmentVariable($keyEnv, 'Process')) {
+    $storedKey = [Environment]::GetEnvironmentVariable($keyEnv, 'User')
+    if ($storedKey) { [Environment]::SetEnvironmentVariable($keyEnv, $storedKey, 'Process') }
+}
+if (-not [Environment]::GetEnvironmentVariable($keyEnv, 'Process')) {
+    throw "$keyEnv is not set. Add the provider key as a user environment variable (see README)."
+}
 
 # --- 1. proxy up? start it hidden if not ---
 $listening = Get-NetTCPConnection -State Listen -LocalPort $port -EA SilentlyContinue
@@ -15,8 +27,17 @@ if (-not $listening) {
     $pyw = (Get-Command pythonw.exe -EA SilentlyContinue).Source
     if (-not $pyw) { throw "pythonw.exe not on PATH — install Python 3.9+." }
     Start-Process -FilePath $pyw -ArgumentList "`"$root\proxy.py`"" -WindowStyle Hidden
-    Start-Sleep -Seconds 2
 }
+
+$healthy = $false
+for ($i = 0; $i -lt 10; $i++) {
+    try {
+        $health = Invoke-RestMethod -Uri "http://127.0.0.1:$port/health" -TimeoutSec 2
+        if ($health.status -eq 'ok') { $healthy = $true; break }
+    } catch {}
+    Start-Sleep -Milliseconds 500
+}
+if (-not $healthy) { throw "anyclaude proxy on port $port did not pass /health. Check the provider key and proxy.log." }
 
 # --- 2. resolve Claude Desktop (path carries the version; look it up at runtime) ---
 $pkg = Get-AppxPackage -Name 'Claude'
@@ -34,7 +55,26 @@ if ((Test-Path $asar) -and -not ([System.IO.File]::ReadAllText($asar, [System.Te
     exit 1
 }
 
-New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
+New-Item -ItemType Directory -Force -Path $profileDir, $claudeConfigDir, $coworkDir | Out-Null
+
+# Keep embedded Claude Code and Cowork state out of the subscription profile. Preserve a custom
+# Cowork path; migrate only the default ~/Claude location into the isolated anyclaude profile.
+if (Test-Path $desktopConfig) {
+    $desktop = Get-Content $desktopConfig -Raw | ConvertFrom-Json
+} else {
+    $desktop = [PSCustomObject]@{}
+}
+$currentCowork = $desktop.coworkUserFilesPath
+$defaultCowork = Join-Path $HOME 'Claude'
+if (-not $currentCowork -or [string]::Equals(
+        [System.IO.Path]::GetFullPath($currentCowork),
+        [System.IO.Path]::GetFullPath($defaultCowork),
+        [System.StringComparison]::OrdinalIgnoreCase)) {
+    $desktop | Add-Member -NotePropertyName coworkUserFilesPath -NotePropertyValue $coworkDir -Force
+    $temporaryConfig = "$desktopConfig.tmp"
+    $desktop | ConvertTo-Json -Depth 32 | Set-Content -Encoding UTF8 $temporaryConfig
+    Move-Item -Force $temporaryConfig $desktopConfig
+}
 
 # --- 3. self-heal the gateway config from the repo seed (no secrets in it) ---
 $seed = Join-Path $root 'configLibrary'
@@ -49,6 +89,7 @@ $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $exe
 $psi.UseShellExecute = $false
 $psi.EnvironmentVariables['CLAUDE_USER_DATA_DIR'] = $profileDir
+$psi.EnvironmentVariables['CLAUDE_CONFIG_DIR'] = $claudeConfigDir
 $proc = [System.Diagnostics.Process]::Start($psi)
 
 # --- 5. give it its own taskbar button (AUMID lives on the HWND; re-applied each launch) ---

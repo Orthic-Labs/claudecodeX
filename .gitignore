@@ -4,6 +4,7 @@ proxy.log
 *.log
 __pycache__/
 *.pyc
+.audit/
 
 # Key material must never land here — belt and braces.
 *.key

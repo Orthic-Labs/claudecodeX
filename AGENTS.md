@@ -11,6 +11,7 @@
 - `configLibrary/` — secret-free Claude Desktop Gateway seed
 - `mac/anyclaude-macos.sh` — isolated macOS Desktop launcher
 - `windows/` — Windows launcher, installer, and taskbar separation
+- `docs/windows.md` — Windows simultaneous-use, isolation, and removal guide
 - `docs/macos.md` — Mac isolation and managed-sandbox policy
 
 ## Invariants
@@ -19,6 +20,7 @@
 - Keep the proxy bound to `127.0.0.1`.
 - Keep `proxy.py` free of third-party runtime dependencies.
 - Preserve both `CLAUDE_USER_DATA_DIR` and `CLAUDE_CONFIG_DIR` isolation.
+- Keep the simultaneous-use promise literal: the normal subscription profile must remain untouched while the isolated instance runs.
 - Preserve custom Cowork storage; migrate only the default `~/Claude` path.
 - Keep `/health` local and side-effect-free; launcher readiness must not consume inference.
 - Never claim a provider/platform combination is verified without real evidence.
@@ -44,4 +46,4 @@ For Claude Desktop behavior, verify the stock subscription profile remains untou
 
 ## Documentation standard
 
-The README is the human entry point: prerequisites, copy-paste quick start, surface choice, proof, and common failures. Put platform-specific policy and diagnostics in `docs/`; link them at the exact failure point. Commands must state whether they make a paid request, mutate machine-wide settings, or require administrator access.
+The README is the human entry point. Its first viewport must establish **one desktop, two live Claude sessions**, show real proof, and point directly to the second-window setup. Put platform-specific policy and diagnostics in `docs/`; link them at the exact failure point. Commands must state whether they make a paid request, mutate machine-wide settings, or require administrator access.
