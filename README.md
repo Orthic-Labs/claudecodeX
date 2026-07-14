@@ -5,7 +5,7 @@
 <h2 align="center">Run two Claude Desktop instances side by side</h2>
 
 <p align="center">
-  Use your Anthropic subscription in the first. Use MiniMax M3—or another third-party Anthropic-compatible provider—in the second.<br>
+  Use your Anthropic subscription in the first. Use MiniMax M3 or another third-party Anthropic-compatible provider in the second.<br>
   <strong>Both run simultaneously on the same computer.</strong>
 </p>
 

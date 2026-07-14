@@ -1,4 +1,4 @@
-# AGENTS.md — anyclaude
+# AGENTS.md: anyclaude
 
 ## Product contract
 
@@ -6,13 +6,13 @@
 
 ## Repository map
 
-- `proxy.py` — request forwarding, model routing, thinking policy, localhost server
-- `examples/*.json` — provider templates; unverified providers must stay labeled untested
-- `configLibrary/` — secret-free Claude Desktop Gateway seed
-- `mac/anyclaude-macos.sh` — isolated macOS Desktop launcher
-- `windows/` — Windows launcher, installer, and taskbar separation
-- `docs/windows.md` — Windows simultaneous-use, isolation, and removal guide
-- `docs/macos.md` — Mac isolation and managed-sandbox policy
+- `proxy.py`: request forwarding, model routing, thinking policy, localhost server
+- `examples/*.json`: provider templates; unverified providers must stay labeled untested
+- `configLibrary/`: secret-free Claude Desktop Gateway seed
+- `mac/anyclaude-macos.sh`: isolated macOS Desktop launcher
+- `windows/`: Windows launcher, installer, and taskbar separation
+- `docs/windows.md`: Windows simultaneous-use, isolation, and removal guide
+- `docs/macos.md`: Mac isolation and managed-sandbox policy
 
 ## Invariants
 
@@ -24,6 +24,7 @@
 - Preserve custom Cowork storage; migrate only the default `~/Claude` path.
 - Keep `/health` local and side-effect-free; launcher readiness must not consume inference.
 - Never claim a provider/platform combination is verified without real evidence.
+- Never use em dashes in README or product copy. Use periods, commas, colons, or parentheses.
 - Do not treat Desktop's `/v1/models` probe as a routing test; verify `/v1/messages`.
 
 ## Verification

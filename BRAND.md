@@ -26,7 +26,7 @@ Do not recolor `CLAUDE` to a generic technology blue or move terracotta onto `AN
 
 | Token | Hex | Role | Contrast on route black |
 |---|---|---|---:|
-| Route black | `#0B0D10` | Wordmark field, technical diagrams | — |
+| Route black | `#0B0D10` | Wordmark field, technical diagrams | N/A |
 | Any white | `#F5F2EA` | Modifier, primary text | 17.39:1 |
 | Claude terracotta | `#D97757` | Claude name, route destination, active proof | 6.23:1 |
 | Route graphite | `#252A31` | Dividers and inactive route lines | Decorative only |
@@ -51,7 +51,7 @@ Tanker is for the name and short display statements only. It must not replace re
 
 ## Voice
 
-Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances side by side.** Name the provider in each instance and state that both run simultaneously before explaining the proxy. Do not substitute a clever slogan for those facts. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
+Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances side by side.** Name the provider in each instance and state that both run simultaneously before explaining the proxy. Do not substitute a clever slogan for those facts. Never use em dashes. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
 
 ## Asset provenance
 
