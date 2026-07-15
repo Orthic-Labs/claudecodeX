@@ -11,7 +11,7 @@
 <p align="center">
   <a href="#set-up-the-second-claude-instance"><strong>Set up the second instance</strong></a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#use-it-with-claude-code">Claude Code</a> ·
+  <a href="#how-tos">How-tos</a> ·
   <a href="#provider-status">Provider status</a> ·
   <a href="docs/windows.md">Windows</a> ·
   <a href="docs/macos.md">macOS</a>
@@ -42,6 +42,16 @@ Three reasons people run the second instance:
 - **Compare models on the same task.** Same interface, same prompt, different upstream model.
 
 You keep the Claude interface and workflows you already know without committing the whole app to one provider.
+
+## Features
+
+- **Two Claude Desktop instances at once.** Subscription Claude and an isolated anyclaude instance on a third-party provider, live together on one machine, each with its own profile.
+- **Claude Code through the proxy, interactive or headless.** Point Claude Code's `ANTHROPIC_BASE_URL` at the local proxy to run the CLI on the provider: an interactive session, or a scripted `claude -p` run for pipes and CI, beside a separate subscription terminal.
+- **Any Anthropic-compatible provider.** MiniMax, GLM, Kimi, LiteLLM, vLLM, or a local gateway. Each is one small JSON template in [`examples/`](examples/); adding one is a template plus a verification run.
+- **Per-model routing and thinking policy.** Map different incoming Claude model names to different upstream models or thinking modes (`adaptive`, `disabled`).
+- **No fork, no patch.** A standard-library Python proxy that only renames the model and forwards the request. It binds to `127.0.0.1`, and your provider key stays in an environment variable.
+
+Setup is below. Per-task how-tos (interactive CLI, headless CLI, adding a provider) are in [How-tos](#how-tos).
 
 ## Set up the second Claude instance
 
@@ -172,19 +182,66 @@ Only MiniMax is currently verified. The other entries are compatible configurati
 
 **Adding a provider is a JSON template plus a verification run.** Any Anthropic-compatible endpoint can be a new row here. See [CONTRIBUTING.md](CONTRIBUTING.md) for the template fields, the `/v1/messages` check that counts as proof, and how to move a row from untested to verified.
 
-## Use it with Claude Code
+## How-tos
 
-Keep plain `claude` on your Anthropic subscription and give the alternate route its own alias or shell function:
+### Run Claude Code through the proxy (interactive)
+
+Keep plain `claude` on your Anthropic subscription. Give the proxied route its own command by wrapping the environment in a shell function, so you never re-export by hand.
+
+Add to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8801"
-export ANTHROPIC_AUTH_TOKEN="router-dummy"
-export ANTHROPIC_MODEL="claude-opus-4-8"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5-20251001"
-claude
+anyclaude-code() {
+  ANTHROPIC_BASE_URL="http://127.0.0.1:8801" \
+  ANTHROPIC_AUTH_TOKEN="router-dummy" \
+  ANTHROPIC_MODEL="claude-opus-4-8" \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5-20251001" \
+  claude "$@"
+}
 ```
 
-`/status` should show the localhost proxy URL. This can run beside a separate subscription-backed Claude Code terminal just as the two Desktop windows do.
+Windows PowerShell (add to `$PROFILE`):
+
+```powershell
+function anyclaude-code {
+  $env:ANTHROPIC_BASE_URL="http://127.0.0.1:8801"
+  $env:ANTHROPIC_AUTH_TOKEN="router-dummy"
+  $env:ANTHROPIC_MODEL="claude-opus-4-8"
+  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5-20251001"
+  claude @args
+}
+```
+
+Run `anyclaude-code`. `/status` shows the localhost proxy URL. It runs beside a separate subscription-backed `claude` terminal just as the two Desktop windows do.
+
+### Run Claude Code headlessly (scripted)
+
+The same function drives non-interactive runs. `claude -p` prints one response and exits, so provider-billed work goes in scripts, pipes, and CI:
+
+```bash
+anyclaude-code -p "Summarize this diff in three bullets" < changes.patch
+git log -1 --format=%B | anyclaude-code -p "Write a release note for this commit"
+```
+
+Because these bill to your provider, they are a cheap way to run bulk or repetitive Claude Code jobs without spending Anthropic subscription capacity. Add `--output-format json` when a script needs to parse the result.
+
+### Add another provider
+
+Any Anthropic-compatible endpoint can be a new route:
+
+```bash
+cp examples/minimax.json config.json      # start from the verified reference
+```
+
+Edit `upstream` (`host`, `prefix`, `scheme`, `auth_header`, `key_env`) and the `models` map to the provider's real model names, save the key in the environment variable named by `key_env`, restart `python3 proxy.py`, then confirm a real request returns the provider's model:
+
+```bash
+curl -fsS http://127.0.0.1:8801/v1/messages \
+  -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+  -d '{"model":"claude-opus-4-8","max_tokens":16,"messages":[{"role":"user","content":"ping"}]}'
+```
+
+Full field reference and the rule for moving a provider from untested to verified are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 <details>
 <summary><strong>Point the stock Desktop app directly at anyclaude instead</strong></summary>
