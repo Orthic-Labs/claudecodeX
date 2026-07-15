@@ -53,20 +53,27 @@ Tanker is for the name and short display statements only. It must not replace re
 
 Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances simultaneously.** Name the provider in each instance and state that both stay open on one computer before explaining the proxy. Do not substitute a clever slogan for those facts. Never use em dashes. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
 
-## Social preview
+## Preview cards
 
-- Asset: `assets/social-preview.png` (1280x640), the image GitHub shows when the repository is linked anywhere off-site
-- Source: `assets/social-preview.html`, rendered at exactly 1280x640
+Two cards for two slots. Both render from HTML with headless Chrome at an exact window size. Both show the same real two-session desktop as proof and end the route line in terracotta.
+
+**README hero** — `assets/social-preview.png` (1280x1144), embedded at the top of the README. Text band (wordmark, claim, provider line) stacked above the full uncropped screenshot. Source `assets/social-preview.html`.
 
 ```sh
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=old --disable-gpu \
-  --screenshot=assets/social-preview.png --window-size=1280,640 --hide-scrollbars \
+  --screenshot=assets/social-preview.png --window-size=1280,1144 --hide-scrollbars \
   "file://$PWD/assets/social-preview.html"
 ```
 
-The card is the split composition in one frame: the wordmark and the literal claim on the left, the real two-session desktop framed as evidence on the right, the route line ending in terracotta. The screenshot is deliberately scaled down until its session text is texture rather than readable content. Do not crop it into a single window: the two windows and the taskbar are the entire claim.
+**Link-share card** — `assets/link-card.png` (1280x640, 2:1), the image GitHub and social platforms show when the repo is linked off-site. Text left, the whole two-session desktop framed on the right, no crop. Source `assets/link-card.html`. The 2:1 slot center-crops anything taller, which is why the tall hero cannot serve it.
 
-GitHub has no API for this field. Upload it at **Settings > General > Social preview** after changing it.
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=old --disable-gpu \
+  --screenshot=assets/link-card.png --window-size=1280,640 --hide-scrollbars \
+  "file://$PWD/assets/link-card.html"
+```
+
+On the link card the screenshot is scaled down until its session text is texture, not readable content. Do not crop either card into a single window: the two windows and the taskbar are the entire claim. GitHub has no API for the link-share slot; upload `link-card.png` at **Settings > General > Social preview** after changing it.
 
 ## Asset provenance
 
