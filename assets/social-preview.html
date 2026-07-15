@@ -2,94 +2,55 @@
 <meta charset="utf-8">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 1280px; height: 640px; }
+  html, body { width: 1280px; }
   body {
     background: #0B0D10;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #F5F2EA;
     overflow: hidden;
-    position: relative;
   }
 
-  /* Proof, not decoration: the real two-session desktop, bled off the right edge and
-     faded into route black so the card's text stays the thing you read first. */
-  /* The whole desktop, uncropped: two windows and the taskbar are the claim. Framed on purpose so it
-     reads as inset evidence, and scaled small enough that the session text is texture, not something
-     anyone can read off the card. */
-  .proof {
-    position: absolute;
-    top: 50%;
-    right: 46px;
-    transform: translateY(-50%);
-    width: 596px;
-    border: 1px solid #252A31;
-    border-radius: 8px;
-    overflow: hidden;
-    line-height: 0;
-  }
-  .proof img { width: 100%; display: block; }
-  .proof::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(11, 13, 16, 0.18);
-  }
-
-  .left {
-    position: relative;
-    z-index: 2;
-    height: 100%;
-    width: 620px;
-    padding: 0 0 0 64px;
+  /* Text band on top, the real two-session desktop below it at full width. No cropping, no overlap:
+     the screenshot is the user's own product proof and is shown whole. */
+  .head {
+    height: 340px;
+    padding: 0 72px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
+    text-align: center;
   }
 
-  .wordmark { width: 360px; display: block; margin: 0 0 38px -13px; }
+  .wordmark { width: 356px; display: block; margin-bottom: 30px; }
 
   h1 {
-    font-size: 38px;
-    line-height: 1.16;
+    font-size: 44px;
+    line-height: 1.14;
     font-weight: 700;
     letter-spacing: -0.015em;
-    max-width: 530px;
   }
 
   p {
-    margin-top: 22px;
-    font-size: 21px;
-    line-height: 1.5;
+    margin-top: 20px;
+    font-size: 23px;
+    line-height: 1.45;
     color: #9CA1A7;
-    max-width: 530px;
+    max-width: 900px;
   }
   p b { color: #F5F2EA; font-weight: 600; }
 
-  .route {
-    margin-top: 42px;
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 17px;
-    color: #6E7378;
-    white-space: nowrap;
+  .shot {
+    display: block;
+    width: 1280px;
+    border-top: 1px solid #252A31;
   }
-  .route .line { width: 40px; height: 1px; background: #252A31; flex: none; }
-  .route .dest { color: #D97757; }
 </style>
 
-<div class="proof"><img src="claude-desktop-side-by-side.png" alt=""></div>
-
-<div class="left">
+<div class="head">
   <img class="wordmark" src="anyclaude-wordmark.svg" alt="ANYCLAUDE">
-  <h1>Run two Claude Desktop instances side by side.</h1>
+  <h1>Run two Claude Desktop instances simultaneously.</h1>
   <p>Your Anthropic subscription in one. <b>MiniMax, GLM, Kimi, or a local gateway</b> in the other. Both open at once.</p>
-  <div class="route">
-    <span>anyclaude</span>
-    <span class="line"></span>
-    <span>127.0.0.1:8801</span>
-    <span class="line"></span>
-    <span class="dest">your provider</span>
-  </div>
 </div>
+
+<img class="shot" src="claude-desktop-side-by-side.png" alt="">

@@ -1,10 +1,10 @@
 <h1 align="center">
-  <img src="assets/social-preview.png" alt="anyclaude: run two Claude Desktop instances side by side. Your Anthropic subscription in one, MiniMax, GLM, Kimi, or a local gateway in the other. Both open at once.">
+  <img src="assets/social-preview.png" alt="anyclaude: run two Claude Desktop instances simultaneously. Your Anthropic subscription in one, MiniMax, GLM, Kimi, or a local gateway in the other. Both open at once.">
 </h1>
 
 <p align="center">
   Use your Anthropic subscription in the first. Use MiniMax M3 or another third-party Anthropic-compatible provider in the second.<br>
-  <strong>Both run simultaneously on the same computer.</strong><br>
+  <strong>Both stay open on the same computer.</strong><br>
   The second instance talks to the provider you configure, so its work does not draw down your Anthropic usage limits.
 </p>
 
@@ -170,6 +170,8 @@ isolated anyclaude Desktop ─→ 127.0.0.1:8801 ─→ your provider
 
 Only MiniMax is currently verified. The other entries are compatible configurations, not support claims.
 
+**Adding a provider is a JSON template plus a verification run.** Any Anthropic-compatible endpoint can be a new row here. See [CONTRIBUTING.md](CONTRIBUTING.md) for the template fields, the `/v1/messages` check that counts as proof, and how to move a row from untested to verified.
+
 ## Use it with Claude Code
 
 Keep plain `claude` on your Anthropic subscription and give the alternate route its own alias or shell function:
@@ -242,6 +244,7 @@ The Windows launcher reads user-level variables created by `setx`. On macOS, GUI
 | `docs/windows.md` | Windows setup, isolation, and uninstall guide |
 | `docs/macos.md` | macOS setup and sandbox policy |
 | `BRAND.md` | Wordmark, color, composition, and voice rules |
+| `CONTRIBUTING.md` | How to add a provider and run the checks |
 | `tests/` | Offline regression checks for launcher invariants |
 | `AGENTS.md` | Repository contract and verification commands for coding agents |
 

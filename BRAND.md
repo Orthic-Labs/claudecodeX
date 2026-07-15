@@ -51,7 +51,7 @@ Tanker is for the name and short display statements only. It must not replace re
 
 ## Voice
 
-Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances side by side.** Name the provider in each instance and state that both run simultaneously before explaining the proxy. Do not substitute a clever slogan for those facts. Never use em dashes. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
+Direct, explicit, and operational. Lead with the literal product behavior: **Run two Claude Desktop instances simultaneously.** Name the provider in each instance and state that both stay open on one computer before explaining the proxy. Do not substitute a clever slogan for those facts. Never use em dashes. State what is verified, what is untested, what mutates the machine, and what consumes a paid request. Avoid “seamless,” “unlock,” “revolutionary,” and claims that every Anthropic-compatible provider is proven.
 
 ## Social preview
 
