@@ -57,7 +57,7 @@ Direct, explicit, and operational. Lead with the literal product behavior: **Run
 
 Two cards for two slots. Both render from HTML with headless Chrome at an exact window size. Both show the same real two-session desktop as proof and end the route line in terracotta.
 
-**README hero** — `assets/social-preview.png` (1280x1144), embedded at the top of the README. Text band (wordmark, claim, provider line) stacked above the full uncropped screenshot. Source `assets/social-preview.html`.
+**README hero**: `assets/social-preview.png` (1280x1144), embedded at the top of the README. Text band (wordmark, claim, provider line) stacked above the full uncropped screenshot. Source `assets/social-preview.html`.
 
 ```sh
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=old --disable-gpu \
@@ -65,7 +65,7 @@ Two cards for two slots. Both render from HTML with headless Chrome at an exact 
   "file://$PWD/assets/social-preview.html"
 ```
 
-**Link-share card** — `assets/link-card.png` (1280x640, 2:1), the image GitHub and social platforms show when the repo is linked off-site. Text left, the whole two-session desktop framed on the right, no crop. Source `assets/link-card.html`. The 2:1 slot center-crops anything taller, which is why the tall hero cannot serve it.
+**Link-share card**: `assets/link-card.png` (1280x640, 2:1), the image GitHub and social platforms show when the repo is linked off-site. Text left, the whole two-session desktop framed on the right, no crop. Source `assets/link-card.html`. The 2:1 slot center-crops anything taller, which is why the tall hero cannot serve it.
 
 ```sh
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=old --disable-gpu \
