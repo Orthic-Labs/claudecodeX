@@ -6,7 +6,7 @@ The Windows launcher opens an isolated anyclaude profile beside the normal subsc
 
 Prerequisites:
 
-- Claude Desktop installed from the Microsoft Store
+- Claude Desktop installed from the Microsoft Store or [Anthropic's Windows installer](https://claude.com/download)
 - Python 3.9+ with `pythonw.exe` on `PATH`
 - `config.json` copied from a provider template
 - The provider key saved as the user environment variable named by `upstream.key_env`
@@ -58,7 +58,7 @@ Isolation is for auth and Desktop state, not for your skill library: without the
 - Creates `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\anyclaude-proxy.vbs`
 - Creates profile data under `%LOCALAPPDATA%\anyclaude` on first launch
 
-No administrator access is required. Claude Desktop continues to update through its normal installation.
+No administrator access is required for anyclaude or Anthropic's non-admin installer. Claude Desktop continues to update through its normal managed installation. anyclaude resolves the current signed version on every launch, so it follows updates automatically.
 
 ## Remove it
 
@@ -91,3 +91,5 @@ Run `windows\launch.ps1` again. It reapplies the per-window AppUserModelID after
 ### The launcher refuses to open Claude
 
 It checks the installed Claude bundle for `CLAUDE_USER_DATA_DIR`. If a Desktop update removes that behavior, the launcher stops rather than silently opening the subscription profile and billing the wrong provider.
+
+The launcher accepts official Microsoft Store/MSIX and Anthropic installer builds. It rejects manually extracted or unsigned copies. If the shortcut does nothing, inspect `%LOCALAPPDATA%\anyclaude\profile\launcher-error.log`; the shortcut also displays that path when launch fails.

@@ -48,3 +48,5 @@ For Claude Desktop behavior, verify the stock subscription profile remains untou
 ## Documentation standard
 
 The README is the human entry point. Its first viewport must establish **one desktop, two live Claude sessions**, show real proof, and point directly to the second-window setup. Put platform-specific policy and diagnostics in `docs/`; link them at the exact failure point. Commands must state whether they make a paid request, mutate machine-wide settings, or require administrator access.
+
+Record every user-visible fix or behavior change in the root `CHANGELOG.md` under `Unreleased` or a dated release entry, and keep the README's changelog link visible.

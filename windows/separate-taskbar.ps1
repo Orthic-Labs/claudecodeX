@@ -1,7 +1,7 @@
 # Give the anyclaude window its own taskbar button.
 #
-# Claude Desktop never calls setAppUserModelId, so both instances inherit the MSIX
-# package AUMID and Windows groups them under one taskbar button. Windows DOES honour
+# Claude Desktop does not give the isolated instance a distinct app identity, so
+# Windows groups both windows under one taskbar button. Windows DOES honour
 # an explicit per-window AUMID set via SHGetPropertyStoreForWindow + PKEY_AppUserModel_ID.
 #
 # All COM work happens inside compiled C#: PowerShell cannot bind methods on the
@@ -12,7 +12,8 @@
 param(
     [Parameter(Mandatory)][int]$TargetPid,
     [string]$Aumid = 'anyclaude.Instance',
-    [string]$DisplayName = 'anyclaude'
+    [string]$DisplayName = 'anyclaude',
+    [string]$IconResource = ''
 )
 
 Add-Type -TypeDefinition @'
@@ -85,8 +86,5 @@ $proc = Get-Process -Id $TargetPid -ErrorAction Stop
 $hwnd = $proc.MainWindowHandle
 if ($hwnd -eq [IntPtr]::Zero) { throw "pid $TargetPid has no main window yet" }
 
-$pkg = Get-AppxPackage -Name 'Claude'
-$icon = if ($pkg) { (Join-Path $pkg.InstallLocation 'app\Claude.exe') + ',0' } else { '' }
-
-[WindowAumid]::Apply($hwnd, $Aumid, $DisplayName, $icon)
+[WindowAumid]::Apply($hwnd, $Aumid, $DisplayName, $IconResource)
 Write-Host "[anyclaude] taskbar identity set: '$DisplayName' ($Aumid) on pid $TargetPid"

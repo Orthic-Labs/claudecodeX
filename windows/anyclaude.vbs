@@ -2,4 +2,17 @@
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 ps1 = fso.GetParentFolderName(WScript.ScriptFullName) & "\launch.ps1"
-sh.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1 & """", 0, False
+powerShell = sh.ExpandEnvironmentStrings("%ProgramFiles%") & "\PowerShell\7\pwsh.exe"
+If Not fso.FileExists(powerShell) Then
+    Set processEnv = sh.Environment("Process")
+    systemModules = sh.ExpandEnvironmentStrings("%SystemRoot%") & "\System32\WindowsPowerShell\v1.0\Modules"
+    processEnv("PSModulePath") = systemModules & ";" & processEnv("PSModulePath")
+    powerShell = sh.ExpandEnvironmentStrings("%SystemRoot%") & "\System32\WindowsPowerShell\v1.0\powershell.exe"
+End If
+
+launchExitCode = sh.Run("""" & powerShell & """ -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1 & """", 0, True)
+If launchExitCode <> 0 Then
+    errorLog = sh.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\anyclaude\profile\launcher-error.log"
+    MsgBox "anyclaude could not start. See " & errorLog & " for the exact error.", vbCritical, "anyclaude"
+End If
+WScript.Quit launchExitCode

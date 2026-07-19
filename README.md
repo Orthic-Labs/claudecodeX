@@ -14,7 +14,8 @@
   <a href="#how-tos">How-tos</a> ·
   <a href="#provider-status">Provider status</a> ·
   <a href="docs/windows.md">Windows</a> ·
-  <a href="docs/macos.md">macOS</a>
+  <a href="docs/macos.md">macOS</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 <p align="center">
@@ -92,6 +93,8 @@ powershell -ExecutionPolicy Bypass -File windows\install.ps1
 ```
 
 This adds an **anyclaude** Desktop/Start shortcut and registers the local proxy to start at login. Open Claude normally, then open **anyclaude**. They receive separate taskbar identities and isolated profiles. See the [Windows guide](docs/windows.md) for exactly what changes and how to remove it.
+
+Both official Windows install types are supported: Microsoft Store/MSIX and Anthropic's updater-managed Windows installer. anyclaude resolves the current signed Claude version on every launch, so the second instance follows normal Claude Desktop updates automatically.
 
 #### macOS
 
@@ -300,6 +303,7 @@ The Windows launcher reads user-level variables created by `setx`. On macOS, GUI
 | `mac/` | Isolated macOS launcher |
 | `docs/windows.md` | Windows setup, isolation, and uninstall guide |
 | `docs/macos.md` | macOS setup and sandbox policy |
+| `CHANGELOG.md` | User-visible fixes and changes by date |
 | `BRAND.md` | Wordmark, color, composition, and voice rules |
 | `CONTRIBUTING.md` | How to add a provider and run the checks |
 | `tests/` | Offline regression checks for launcher invariants |

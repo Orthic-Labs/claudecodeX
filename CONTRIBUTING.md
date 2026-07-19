@@ -67,6 +67,9 @@ Repository invariants (localhost-only binding, no third-party runtime dependenci
 keys, profile isolation, no unproven verified-provider claims, no em dashes in product copy) live in
 [`AGENTS.md`](AGENTS.md). Read it before touching `proxy.py` or a launcher.
 
+Add every user-visible fix or behavior change to [`CHANGELOG.md`](CHANGELOG.md). Use `Unreleased`
+while work is pending, or a dated entry when the change is published directly to `main`.
+
 ## Reporting
 
 Provider that does not work, a launcher that opens the wrong profile, or a docs error: open an issue

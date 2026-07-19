@@ -7,6 +7,27 @@ $claudeConfigDir = Join-Path $profileDir 'claude-config'
 $coworkDir  = Join-Path $profileDir 'cowork-user-files'
 $desktopConfig = Join-Path $profileDir 'claude_desktop_config.json'
 $cfg        = Join-Path $root 'config.json'
+$launcherErrorLog = Join-Path $profileDir 'launcher-error.log'
+$resolverPath = Join-Path $PSScriptRoot 'claude-install.ps1'
+
+trap {
+    [System.IO.Directory]::CreateDirectory($profileDir) | Out-Null
+    $failure = @(
+        (Get-Date).ToString('o')
+        $_.Exception.Message
+        $_.InvocationInfo.PositionMessage
+    ) -join [Environment]::NewLine
+    [System.IO.File]::WriteAllText($launcherErrorLog, $failure)
+    exit 1
+}
+
+if (Test-Path -LiteralPath $launcherErrorLog) {
+    Remove-Item -LiteralPath $launcherErrorLog -Force
+}
+if (-not (Test-Path -LiteralPath $resolverPath)) {
+    throw "Claude Desktop install resolver not found: $resolverPath"
+}
+. $resolverPath
 
 if (-not (Test-Path $cfg)) { throw "config.json not found. Copy one from examples\ first (see README)." }
 $config = Get-Content $cfg -Raw | ConvertFrom-Json
@@ -39,17 +60,16 @@ for ($i = 0; $i -lt 10; $i++) {
 }
 if (-not $healthy) { throw "anyclaude proxy on port $port did not pass /health. Check the provider key and proxy.log." }
 
-# --- 2. resolve Claude Desktop (path carries the version; look it up at runtime) ---
-$pkg = Get-AppxPackage -Name 'Claude'
-if (-not $pkg) { throw 'Claude Desktop is not installed.' }
-$exe = Join-Path $pkg.InstallLocation 'app\Claude.exe'
+# --- 2. resolve the current official updater-managed Claude Desktop build ---
+$claude = Resolve-ClaudeDesktopInstall
+$exe = $claude.ExecutablePath
 
 # Warn (don't silently no-op) if a Desktop update dropped the isolation env var.
-$asar = Join-Path $pkg.InstallLocation 'app\resources\app.asar'
+$asar = $claude.AsarPath
 if ((Test-Path $asar) -and -not ([System.IO.File]::ReadAllText($asar, [System.Text.Encoding]::UTF8)).Contains('CLAUDE_USER_DATA_DIR')) {
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.MessageBox]::Show(
-        "Claude Desktop $($pkg.Version) no longer supports CLAUDE_USER_DATA_DIR.`n`n" +
+        "Claude Desktop $($claude.DisplayVersion) no longer supports CLAUDE_USER_DATA_DIR.`n`n" +
         "anyclaude cannot isolate the second instance on this build. See the repo README.",
         'anyclaude', 'OK', 'Warning') | Out-Null
     exit 1
@@ -106,6 +126,12 @@ if ((Test-Path $seed) -and -not (Test-Path (Join-Path $live '_meta.json'))) {
 }
 
 # --- 4. launch isolated instance (UseShellExecute=false so env vars reach the child) ---
+$launchStarted = Get-Date
+$existingWindowPids = @(
+    Get-Process -Name 'claude' -ErrorAction SilentlyContinue |
+        Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } |
+        Select-Object -ExpandProperty Id
+)
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $exe
 $psi.UseShellExecute = $false
@@ -119,7 +145,20 @@ if (Test-Path $sep) {
     for ($i = 0; $i -lt 40; $i++) {
         Start-Sleep -Milliseconds 500
         $proc.Refresh()
-        if ($proc.HasExited) { break }
-        if ($proc.MainWindowHandle -ne [IntPtr]::Zero) { & $sep -TargetPid $proc.Id; break }
+        $windowProcess = if (-not $proc.HasExited -and $proc.MainWindowHandle -ne [IntPtr]::Zero) {
+            $proc
+        } else {
+            Get-Process -Name 'claude' -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.Id -notin $existingWindowPids -and
+                    $_.StartTime -ge $launchStarted -and
+                    $_.MainWindowHandle -ne [IntPtr]::Zero
+                } |
+                Select-Object -First 1
+        }
+        if ($windowProcess) {
+            & $sep -TargetPid $windowProcess.Id -IconResource $claude.IconResource
+            break
+        }
     }
 }

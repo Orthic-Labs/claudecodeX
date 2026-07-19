@@ -2,18 +2,25 @@
 # registers the proxy to start hidden at login. Re-runnable (idempotent).
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+$resolverPath = Join-Path $PSScriptRoot 'claude-install.ps1'
+
+if (-not (Test-Path -LiteralPath $resolverPath)) {
+    throw "Claude Desktop install resolver not found: $resolverPath"
+}
+. $resolverPath
+$claude = Resolve-ClaudeDesktopInstall
 
 if (-not (Test-Path (Join-Path $root 'config.json'))) {
     Write-Warning "No config.json yet — copy one from examples\ and set your key's env var first (see README)."
 }
 
 $vbs   = Join-Path $PSScriptRoot 'anyclaude.vbs'
-$icon  = (Join-Path (Get-AppxPackage -Name 'Claude').InstallLocation 'app\Claude.exe') + ',0'
+$icon  = $claude.IconResource
 $sh    = New-Object -ComObject WScript.Shell
 
 foreach ($dir in @("$env:USERPROFILE\Desktop", "$env:APPDATA\Microsoft\Windows\Start Menu\Programs")) {
     $lnk = $sh.CreateShortcut((Join-Path $dir 'anyclaude.lnk'))
-    $lnk.TargetPath       = 'wscript.exe'
+    $lnk.TargetPath       = Join-Path $env:WINDIR 'System32\wscript.exe'
     $lnk.Arguments        = """$vbs"""
     $lnk.IconLocation     = $icon
     $lnk.Description       = 'Claude Desktop on your gateway model (anyclaude)'

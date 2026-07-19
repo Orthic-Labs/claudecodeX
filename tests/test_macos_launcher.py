@@ -80,6 +80,7 @@ class MacLauncherTest(unittest.TestCase):
             },
         )
 
+    @unittest.skipIf(os.name == "nt", "POSIX symlink behavior requires a POSIX host")
     def test_skills_and_agents_are_shared_without_leaking_settings(self):
         with tempfile.TemporaryDirectory() as root:
             home = Path(root) / "home"
@@ -99,6 +100,7 @@ class MacLauncherTest(unittest.TestCase):
             # A pinned Anthropic-only model must never follow the skills into the gateway profile.
             self.assertFalse((config / "settings.json").exists())
 
+    @unittest.skipIf(os.name == "nt", "POSIX symlink behavior requires a POSIX host")
     def test_share_repairs_a_stale_link_but_never_clobbers_a_real_directory(self):
         with tempfile.TemporaryDirectory() as root:
             home = Path(root) / "home"
@@ -121,6 +123,7 @@ class MacLauncherTest(unittest.TestCase):
             self.assertFalse((config / "agents").is_symlink())
             self.assertEqual((config / "agents" / "mine.md").read_text(), "keep me")
 
+    @unittest.skipIf(os.name == "nt", "POSIX symlink behavior requires a POSIX host")
     def test_share_can_be_sealed_off(self):
         with tempfile.TemporaryDirectory() as root:
             home = Path(root) / "home"
