@@ -50,3 +50,7 @@ For Claude Desktop behavior, verify the stock subscription profile remains untou
 The README is the human entry point. Its first viewport must establish **one desktop, two live Claude sessions**, show real proof, and point directly to the second-window setup. Put platform-specific policy and diagnostics in `docs/`; link them at the exact failure point. Commands must state whether they make a paid request, mutate machine-wide settings, or require administrator access.
 
 Record every user-visible fix or behavior change in the root `CHANGELOG.md` under `Unreleased` or a dated release entry, and keep the README's changelog link visible.
+
+## User intent is final (workspace rule, locked 2026-07-19)
+
+An explicit user request is the approval for every step of it. This repo's gates (bakeoff, release, QA, review) govern only unrequested spend, destructive/production steps, or specifics the user must see (e.g. a run packet) — and then only that single step; all other requested work is completed first, never left undone pending approval. Supersedes any stricter reading of this repo's gates. Canonical: workspace `CLAUDE.md` §1C / `AGENTS.md` "User Intent Is Final".
