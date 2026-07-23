@@ -1,0 +1,20 @@
+#!/bin/sh
+# Claude Code on third-party models, through the local claudecodeX proxy.
+#
+# EDIT THE FOUR MODEL LINES BELOW to change what each picker slot calls.
+#
+# Claude Code's /model picker has fixed slot names (Fable/Opus/Sonnet/Haiku)
+# and cannot be extended. These variables decide what each slot actually calls,
+# which is what makes the models selectable in the UI rather than only
+# reachable with --model. The thinking policy per model lives in the proxy's
+# config.json, not here.
+exec env \
+  ANTHROPIC_BASE_URL="http://127.0.0.1:8801" \
+  ANTHROPIC_AUTH_TOKEN="router-dummy" \
+  ANTHROPIC_MODEL="glm-5.2" \
+  ANTHROPIC_DEFAULT_FABLE_MODEL="qwen3.8-max-preview" \
+  ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.2" \
+  ANTHROPIC_DEFAULT_SONNET_MODEL="MiniMax-M3" \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-pro" \
+  CLAUDE_CODE_AUTO_COMPACT_WINDOW="1000000" \
+  claude "$@"

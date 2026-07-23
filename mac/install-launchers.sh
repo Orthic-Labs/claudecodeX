@@ -67,6 +67,14 @@ install_applet() {
 # CLI is on PATH), and LaunchServices silently refuses to launch it: `open`
 # returns success, the applet never runs, and nothing is logged. codexX
 # launches normally and matches the claudeX name.
+# ccx and cdx go on PATH rather than into a shell profile: a function in
+# ~/.zshenv only exists in shells started after it was written, so an open
+# terminal reports "command not found" and the fix looks like it did not work.
+mkdir -p "$HOME/bin"
+cp "$REPO/bin/ccx" "$REPO/bin/cdx" "$HOME/bin/"
+chmod +x "$HOME/bin/ccx" "$HOME/bin/cdx"
+echo "installed $HOME/bin/ccx and $HOME/bin/cdx"
+
 install_applet claudeX claudecodex-macos.sh claudecodex-claude "CLAUDECODEX_PROFILE='$PROFILE' " com.orthiclabs.claudecodex.claude
 install_applet codexX codex-second-instance.sh claudecodex-codex "" com.orthiclabs.claudecodex.codex
 

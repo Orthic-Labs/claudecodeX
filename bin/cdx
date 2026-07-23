@@ -1,0 +1,7 @@
+#!/bin/sh
+# Codex CLI on third-party models, through the local claudecodeX proxy.
+#
+# The model list comes from the catalog at $CODEX_HOME/catalog.json; edit the
+# MODELS list in mac/make-codex-catalog.py and re-run it to change the options.
+# Your primary ~/.codex stays on the ChatGPT subscription and is untouched.
+exec env CODEX_HOME="${CODEX_PROXY_HOME:-$HOME/.codex-proxy}" codex "$@"
