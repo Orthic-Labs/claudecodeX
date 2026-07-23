@@ -2,11 +2,14 @@
 
 ## Product contract
 
-`anyclaude` lets Claude Code or Claude Desktop use an Anthropic-compatible provider by translating incoming Anthropic-shaped model names into provider model names. Keep the proxy local, provider-neutral, standard-library only, and explicit about what has actually been tested.
+`anyclaude` lets Claude Code, Claude Desktop, or Codex CLI use a third-party provider. For Claude it translates incoming Anthropic-shaped model names into provider model names. For Codex it serves the OpenAI Responses API that Codex requires and translates to Chat Completions upstream. Keep the proxy local, provider-neutral, standard-library only, and explicit about what has actually been tested.
 
 ## Repository map
 
-- `proxy.py`: request forwarding, model routing, thinking policy, localhost server
+- `proxy.py`: request forwarding, model routing, thinking policy, streaming, localhost server
+- `codex_bridge.py`: Responses to Chat Completions translation, pure functions plus one stream state machine
+- `mac/save-key.sh`, `windows/save-key.ps1`: hidden-input key persistence
+- `docs/codex.md`: Codex setup, capability table, troubleshooting
 - `examples/*.json`: provider templates; unverified providers must stay labeled untested
 - `configLibrary/`: secret-free Claude Desktop Gateway seed
 - `mac/anyclaude-macos.sh`: isolated macOS Desktop launcher
@@ -18,7 +21,10 @@
 
 - Never commit provider keys, `.env`, `config.json`, or logs.
 - Keep the proxy bound to `127.0.0.1`.
-- Keep `proxy.py` free of third-party runtime dependencies.
+- Keep `proxy.py` and `codex_bridge.py` free of third-party runtime dependencies.
+- Keep `codex_bridge.py` free of network calls so every translation rule stays unit testable offline.
+- Never emit a Responses item shape that is not asserted by a test in `tests/test_codex_bridge.py`. Codex rejects unknown item shapes with `failed to parse ResponseItem`.
+- Codex custom providers must use `wire_api = "responses"`. `wire_api = "chat"` is rejected by the Codex binary; do not document it as an option.
 - Preserve both `CLAUDE_USER_DATA_DIR` and `CLAUDE_CONFIG_DIR` isolation.
 - Keep the simultaneous-use promise literal: the normal subscription profile must remain untouched while the isolated instance runs.
 - Preserve custom Cowork storage; migrate only the default `~/Claude` path.
@@ -32,14 +38,18 @@
 Run before proposing a change:
 
 ```bash
-python3 -m py_compile proxy.py
+python3 -m py_compile proxy.py codex_bridge.py
 python3 -m unittest discover -s tests -v
-sh -n mac/anyclaude-macos.sh
+sh -n mac/anyclaude-macos.sh mac/save-key.sh
 for file in examples/*.json configLibrary/*.json; do
   python3 -m json.tool "$file" >/dev/null || exit 1
 done
 git diff --check
 ```
+
+`tests/test_proxy.py` starts the proxy against a fake Chat Completions server and
+asserts the full Responses event sequence, so the Codex path is provable offline
+without a provider key or a paid request.
 
 For proxy behavior, copy an example to the ignored `config.json`, provide the named key environment variable, start `python3 proxy.py`, and send the README's `/v1/messages` request. Do not use a live paid request unless the task requires it and the operator has supplied the provider key.
 

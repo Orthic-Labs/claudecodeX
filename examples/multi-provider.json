@@ -1,0 +1,60 @@
+{
+  "_comment": "Several providers behind one proxy. Each route names its own provider, so one Claude window or one Codex session can reach MiniMax, Alibaba, and your real Anthropic subscription at the same time. Only the providers you actually route to need their key set. Note the port: 8801 is often already taken by another local proxy.",
+  "port": 8810,
+  "providers": {
+    "anthropic": {
+      "_comment": "Your real subscription. \"passthrough\" forwards the caller's own credentials, so the proxy never needs an Anthropic key of its own.",
+      "host": "api.anthropic.com",
+      "prefix": "",
+      "scheme": "https",
+      "auth": "passthrough"
+    },
+    "minimax": {
+      "_comment": "macOS reads the Keychain item named by \"keychain\"; Windows and CI use the environment variable. The variable wins when both exist, so one config works on both machines.",
+      "host": "api.minimax.io",
+      "prefix": "/anthropic",
+      "scheme": "https",
+      "auth_header": "x-api-key",
+      "keychain": "ANYCLAUDE_MINIMAX_API_KEY",
+      "key_env": "MINIMAX_API_KEY"
+    },
+    "minimax-openai": {
+      "host": "api.minimax.io",
+      "prefix": "/v1",
+      "scheme": "https",
+      "auth_header": "authorization",
+      "keychain": "ANYCLAUDE_MINIMAX_API_KEY",
+      "key_env": "MINIMAX_API_KEY"
+    },
+    "alibaba": {
+      "host": "token-plan.ap-southeast-1.maas.aliyuncs.com",
+      "prefix": "/apps/anthropic",
+      "scheme": "https",
+      "auth_header": "authorization",
+      "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+      "key_env": "DASHSCOPE_API_KEY"
+    },
+    "alibaba-openai": {
+      "host": "token-plan.ap-southeast-1.maas.aliyuncs.com",
+      "prefix": "/compatible-mode/v1",
+      "scheme": "https",
+      "auth_header": "authorization",
+      "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+      "key_env": "DASHSCOPE_API_KEY"
+    }
+  },
+  "models": {
+    "_comment_models": "Claude front end. Keys are matched against the incoming claude-* name, in order. A key may list alternatives with |.",
+    "haiku": { "provider": "minimax", "name": "MiniMax-M3", "thinking": "disabled" },
+    "sonnet": { "provider": "alibaba", "name": "qwen3.7-max", "thinking": "adaptive" },
+    "default": { "provider": "anthropic", "name": "passthrough" }
+  },
+  "codex": {
+    "_comment_codex": "Codex front end. \"passthrough\" keeps the model id you typed, so `codex -m glm-5.2` reaches Alibaba unchanged.",
+    "models": {
+      "minimax": { "provider": "minimax-openai", "name": "MiniMax-M3" },
+      "qwen|glm|deepseek|kimi": { "provider": "alibaba-openai", "name": "passthrough" },
+      "default": { "provider": "alibaba-openai", "name": "qwen3.7-max" }
+    }
+  }
+}

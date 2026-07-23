@@ -1,0 +1,30 @@
+{
+  "_comment": "Alibaba Cloud Model Studio Token Plan (Singapore). One key serves both front ends: /v1/messages for Claude Desktop and Claude Code, /v1/responses for Codex. Token Plan keys start with sk-sp-. macOS: ./mac/save-key.sh ANYCLAUDE_DASHSCOPE_API_KEY. Windows: set DASHSCOPE_API_KEY.",
+  "port": 8810,
+  "upstream": {
+    "_comment": "Anthropic-compatible endpoint. Alibaba documents Qwen model ids here.",
+    "host": "token-plan.ap-southeast-1.maas.aliyuncs.com",
+    "prefix": "/apps/anthropic",
+    "scheme": "https",
+    "auth_header": "authorization",
+    "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+    "key_env": "DASHSCOPE_API_KEY"
+  },
+  "models": {
+    "default": { "name": "qwen3.7-max", "thinking": "adaptive" },
+    "sonnet": { "name": "qwen3.7-plus", "thinking": "adaptive" },
+    "haiku": { "name": "qwen3.6-flash", "thinking": "disabled" }
+  },
+  "codex": {
+    "_comment": "OpenAI-compatible endpoint, used by the /v1/responses front end. Every Token Plan model is reachable here, so an unlisted model name passes through untouched and 'codex -m glm-5.2' works.",
+    "host": "token-plan.ap-southeast-1.maas.aliyuncs.com",
+    "prefix": "/compatible-mode/v1",
+    "scheme": "https",
+    "auth_header": "authorization",
+    "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+    "key_env": "DASHSCOPE_API_KEY",
+    "models": {
+      "gpt-": { "name": "qwen3.7-max" }
+    }
+  }
+}
