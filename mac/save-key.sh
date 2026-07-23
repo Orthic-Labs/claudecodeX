@@ -67,8 +67,12 @@ fi
 echo "Keychain: service '$SERVICE', account '$ACCOUNT'." >&2
 
 if [ -n "$ENV_NAME" ]; then
-  PROFILE="$HOME/.zprofile"
-  LINE="export ${ENV_NAME}=\"\$(security find-generic-password -s ${SERVICE} -a ${ACCOUNT} -w 2>/dev/null)\""
+  # ~/.zshenv, not ~/.zprofile: zprofile is read only by LOGIN shells, so a
+  # plain `zsh -c` or a subshell would not see the variable. The ${VAR:-...}
+  # guard means only the outermost shell pays for the Keychain lookup;
+  # children inherit the exported value.
+  PROFILE="$HOME/.zshenv"
+  LINE="export ${ENV_NAME}=\"\${${ENV_NAME}:-\$(security find-generic-password -s ${SERVICE} -a ${ACCOUNT} -w 2>/dev/null)}\""
   touch "$PROFILE"
   TMP="$(mktemp "${TMPDIR:-/tmp}/claudecodex-key.XXXXXX")"
   trap 'rm -f "$TMP"' EXIT

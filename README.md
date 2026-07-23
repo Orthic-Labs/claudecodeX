@@ -89,7 +89,7 @@ Pass a second name to also expose it as an environment variable, for other tools
 ./mac/save-key.sh CLAUDECODEX_MINIMAX_API_KEY MINIMAX_API_KEY
 ```
 
-That does not store the key twice. It adds a line to `~/.zprofile` that reads the value back out of the Keychain when a shell starts, so there is still exactly one stored secret and rotating the Keychain item rotates the variable with it.
+That does not store the key twice. It adds a line to `~/.zshenv` that reads the value back out of the Keychain when a shell starts, so there is still exactly one stored secret and rotating the Keychain item rotates the variable with it.
 
 The Keychain item lives in `~/Library/Keychains/login.keychain-db`, on your internal disk. It does not depend on where this repository is checked out, so it survives unmounting an external volume.
 
