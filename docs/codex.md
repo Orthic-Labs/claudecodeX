@@ -116,9 +116,16 @@ its own history, the way `CLAUDE_USER_DATA_DIR` does for Claude Desktop:
 
 Your primary Codex keeps its subscription, its picker, and its chats untouched.
 
-One limitation worth stating plainly: Codex Desktop enforces a single instance,
-so the second one runs in the terminal. Launching the app binary again only
-re-activates the existing window.
+Codex Desktop looks single-instance, but the lock lives in its Chromium
+userData directory, not in the app bundle, exactly as it does for Claude
+Desktop. Give the second instance its own `--user-data-dir` and both windows
+run side by side. No copy of the 1.4 GB bundle is needed, so the second
+instance keeps the real code signature and follows normal app updates.
+
+```bash
+./mac/codex-second-instance.sh --install-app   # a "Codex Proxy" launcher
+./mac/codex-second-instance.sh                 # or launch it directly
+```
 
 ### 3a. Pointing your PRIMARY Codex at the proxy instead
 
