@@ -4,6 +4,12 @@ User-visible changes to ClaudeCodeX are recorded here. The project does not yet 
 
 ## Unreleased
 
+### Fixed
+
+- Providers that inline their reasoning in `<think>` tags (MiniMax M3 among them) no longer leak it into the answer. The tags are split out into a proper reasoning item, including when a tag straddles two stream chunks, so Codex shows thinking separately instead of prefixing every reply with it.
+- A `_comment` key inside `providers` or `models` no longer crashes startup. The example configs shipped in this repository use them, so a valid file could fail to load. A test now starts the proxy against every file in `examples/`.
+- One provider with an unsaved key no longer stops the others. Missing keys are a startup warning, and only routes needing that key fail, with a 503 naming both the environment variable and the Keychain service.
+
 ### Added
 
 - macOS Keychain support. A provider can name a `keychain` service instead of relying on a dotfile, so the key never sits in plaintext in `~/.zprofile`, a launchd plist, shell history, or `ps` output. `mac/save-key.sh` stores it with `security add-generic-password` and verifies the read back.

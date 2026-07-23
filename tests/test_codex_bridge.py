@@ -201,6 +201,60 @@ class StreamConversionTest(unittest.TestCase):
         self.assertEqual(snapshot["usage"]["total_tokens"], 3)
 
 
+class ThinkTagTest(unittest.TestCase):
+    """Providers that inline <think> must not leak reasoning into the answer."""
+
+    def test_inline_think_block_becomes_a_reasoning_item(self):
+        state = codex_bridge.ResponsesStream("m")
+        state.start()
+        state.feed({"choices": [{"delta": {"content": "<think>weighing options</think>Answer."}}]})
+        events = parse_events(state.finish())
+        items = {e["item"]["type"]: e["item"] for e in events
+                 if e["type"] == "response.output_item.done"}
+        self.assertEqual(items["reasoning"]["summary"][0]["text"], "weighing options")
+        self.assertEqual(items["message"]["content"][0]["text"], "Answer.")
+
+    def test_tag_split_across_chunks_is_not_emitted_as_text(self):
+        state = codex_bridge.ResponsesStream("m")
+        state.start()
+        for piece in ["<thi", "nk>hidden</thi", "nk>visible"]:
+            state.feed({"choices": [{"delta": {"content": piece}}]})
+        events = parse_events(state.finish())
+        items = {e["item"]["type"]: e["item"] for e in events
+                 if e["type"] == "response.output_item.done"}
+        self.assertEqual(items["reasoning"]["summary"][0]["text"], "hidden")
+        self.assertEqual(items["message"]["content"][0]["text"], "visible")
+
+    def test_plain_text_without_tags_is_untouched(self):
+        splitter = codex_bridge.ThinkSplitter()
+        self.assertEqual(splitter.feed("just an answer"), [("text", "just an answer")])
+        self.assertEqual(splitter.flush(), [])
+
+    def test_a_lone_angle_bracket_is_still_delivered(self):
+        # "<" could begin "<think>", so it is held back, then released at flush.
+        splitter = codex_bridge.ThinkSplitter()
+        splitter.feed("a < b")
+        self.assertEqual("".join(t for _, t in splitter.flush()) or "", "")
+        splitter2 = codex_bridge.ThinkSplitter()
+        emitted = "".join(t for _, t in splitter2.feed("5 < 6")) + \
+                  "".join(t for _, t in splitter2.flush())
+        self.assertEqual(emitted, "5 < 6")
+
+    def test_unclosed_think_block_stays_reasoning_and_never_becomes_answer_text(self):
+        splitter = codex_bridge.ThinkSplitter()
+        # Emitted as it streams, because nothing here could be a partial tag.
+        self.assertEqual(splitter.feed("<think>never closed"),
+                         [("reasoning", "never closed")])
+        self.assertEqual(splitter.flush(), [])
+
+    def test_partial_closing_tag_is_held_until_flush(self):
+        splitter = codex_bridge.ThinkSplitter()
+        splitter.feed("<think>abc")
+        # "</thi" could still complete "</think>", so it must not be emitted yet.
+        self.assertEqual(splitter.feed("</thi"), [])
+        self.assertEqual(splitter.flush(), [("reasoning", "</thi")])
+
+
 class SseParsingTest(unittest.TestCase):
     def test_frames_split_across_reads_are_reassembled(self):
         blocks = [b"data: {\"a\":", b"1}\n\ndata: [DONE]\n\n", b""]

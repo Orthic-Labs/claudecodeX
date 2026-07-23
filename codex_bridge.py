@@ -248,6 +248,69 @@ def sse(event):
     return f"event: {event['type']}\ndata: {json.dumps(event, ensure_ascii=False)}\n\n".encode()
 
 
+THINK_OPEN = "<think>"
+THINK_CLOSE = "</think>"
+
+
+class ThinkSplitter:
+    """Separate inline <think> reasoning from answer text across stream chunks.
+
+    Some providers (MiniMax M3 among them) put reasoning inside <think> tags in
+    the normal content stream rather than in a separate `reasoning_content`
+    field. Left alone it lands in the assistant message, so the answer starts
+    with the model's private deliberation. Tags can straddle chunk boundaries,
+    so a partial tag is held back rather than emitted as text.
+    """
+
+    def __init__(self):
+        self.pending = ""
+        self.in_think = False
+
+    def feed(self, chunk):
+        """Return [(kind, text)] where kind is "reasoning" or "text"."""
+        self.pending += chunk
+        out = []
+        while self.pending:
+            if self.in_think:
+                marker, kind = THINK_CLOSE, "reasoning"
+            else:
+                marker, kind = THINK_OPEN, "text"
+            index = self.pending.find(marker)
+            if index >= 0:
+                if index:
+                    out.append((kind, self.pending[:index]))
+                self.pending = self.pending[index + len(marker):]
+                self.in_think = not self.in_think
+                continue
+            # No complete marker: emit everything except a possible partial tail.
+            hold = _partial_tail(self.pending, marker)
+            if hold:
+                body, self.pending = self.pending[:-hold], self.pending[-hold:]
+            else:
+                body, self.pending = self.pending, ""
+            if body:
+                out.append((kind, body))
+            break
+        return out
+
+    def flush(self):
+        """Emit whatever is held back once the stream ends."""
+        if not self.pending:
+            return []
+        kind = "reasoning" if self.in_think else "text"
+        out = [(kind, self.pending)]
+        self.pending = ""
+        return out
+
+
+def _partial_tail(text, marker):
+    """Length of the longest suffix of `text` that could start `marker`."""
+    for size in range(min(len(marker) - 1, len(text)), 0, -1):
+        if marker.startswith(text[-size:]):
+            return size
+    return 0
+
+
 class ResponsesStream:
     """Accumulate Chat Completions chunks and emit Responses SSE events.
 
@@ -271,6 +334,7 @@ class ResponsesStream:
         self.reasoning_item_id = None
         self.reasoning_index = None
         self.calls = {}           # chat tool_call index -> accumulator
+        self.splitter = ThinkSplitter()
         self.usage = None
         self.finished = False
 
@@ -324,6 +388,30 @@ class ResponsesStream:
                          "role": "assistant", "content": []},
             }))
 
+    def _emit_text(self, out, kind, part):
+        if not part:
+            return
+        if kind == "reasoning":
+            self._ensure_reasoning(out)
+            self.reasoning += part
+            out.append(self._event({
+                "type": "response.reasoning_summary_text.delta",
+                "item_id": self.reasoning_item_id,
+                "output_index": self.reasoning_index,
+                "summary_index": 0,
+                "delta": part,
+            }))
+            return
+        self._ensure_text(out)
+        self.text += part
+        out.append(self._event({
+            "type": "response.output_text.delta",
+            "item_id": self.text_item_id,
+            "output_index": self.text_index,
+            "content_index": 0,
+            "delta": part,
+        }))
+
     def feed(self, chunk):
         """Consume one parsed Chat Completions SSE chunk. Returns SSE bytes."""
         out = []
@@ -353,15 +441,8 @@ class ResponsesStream:
             if isinstance(text, list):
                 text = content_to_text(text)
             if isinstance(text, str) and text:
-                self._ensure_text(out)
-                self.text += text
-                out.append(self._event({
-                    "type": "response.output_text.delta",
-                    "item_id": self.text_item_id,
-                    "output_index": self.text_index,
-                    "content_index": 0,
-                    "delta": text,
-                }))
+                for kind, part in self.splitter.feed(text):
+                    self._emit_text(out, kind, part)
 
             for call in delta.get("tool_calls") or []:
                 if not isinstance(call, dict):
@@ -423,6 +504,8 @@ class ResponsesStream:
             return []
         self.finished = True
         out = []
+        for kind, part in self.splitter.flush():
+            self._emit_text(out, kind, part)
         self._close_reasoning(out)
         self._close_text(out)
         self._close_calls(out)
