@@ -86,6 +86,33 @@ model = "qwen3.7-max"
 model_provider = "claudecodex"
 ```
 
+## The Haiku slot costs more than it looks
+
+Claude Code calls the Haiku slot on its own, so whatever you map there is not
+only what you select: it is what the tool reaches for automatically.
+
+Reproduced by driving the TUI through a pty. One message produces exactly one
+request. The **second** message of a session produces two, issued in the same
+second:
+
+```
+20:33:48  glm-5.2          max_tokens=32000   <- message 1 (Opus slot)
+20:34:23  deepseek-v4-pro  max_tokens=32000   <- Haiku slot, automatic
+20:34:23  glm-5.2          max_tokens=32000   <- message 2 (Opus slot)
+```
+
+The automatic call carries the full budget, so the proxy's small-probe guard
+(which forces thinking off below 4096 tokens) does not apply to it. Mapping a
+reasoning model to that slot therefore spends reasoning tokens on background
+work, once per session, without you asking for it.
+
+That is a pricing consequence of the mapping, not a defect. `max_tokens` is
+logged on every `/v1/messages` line so the automatic calls are visible:
+
+```bash
+tail -f ~/.local/share/claudecodex/proxy.log
+```
+
 ## Making the models selectable, not just reachable
 
 Both CLIs reach any configured model through a flag. Seeing them in the picker
