@@ -62,7 +62,7 @@ case "${1:-}" in
     rm -rf "$LAUNCHER"
     # osacompile, for the same reason as the Claude launcher: LaunchServices
     # rejects a hand-rolled bundle whose executable exits immediately.
-    osacompile -o "$LAUNCHER" -e "do shell script \"'$self' > /dev/null 2>&1 &\""
+    osacompile -o "$LAUNCHER" -e "do shell script \"'$self' --foreground > /dev/null 2>&1\""
     /usr/libexec/PlistBuddy -c 'Set :CFBundleName Codex Proxy' \
       -c 'Add :CFBundleDisplayName string Codex Proxy' \
       "$LAUNCHER/Contents/Info.plist" >/dev/null 2>&1 || true
@@ -89,6 +89,13 @@ if ! curl -fsS --max-time 3 "${PROXY_URL%/v1}/health" >/dev/null 2>&1; then
   echo "claudecodeX proxy is not answering on ${PROXY_URL%/v1}" >&2
   echo "check: launchctl list | grep claudecodex" >&2
   exit 1
+fi
+
+# --foreground: become the app. The .app wrapper runs this through
+# `do shell script`, whose shell exits immediately; a child backgrounded with &
+# is torn down with it, so the window never appears. exec keeps the process.
+if [ "${1:-}" = "--foreground" ]; then
+  exec env CODEX_HOME="$PROFILE" "$APP_BIN" --user-data-dir="$USER_DATA"
 fi
 
 CODEX_HOME="$PROFILE" "$APP_BIN" --user-data-dir="$USER_DATA" >/dev/null 2>&1 &
