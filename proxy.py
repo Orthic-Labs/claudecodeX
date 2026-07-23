@@ -310,12 +310,16 @@ class Handler(BaseHTTPRequestHandler):
         model_in = ""
         upstream_model = "-"
         think = "-"
+        # Logged so a background probe can be told apart from a typed turn:
+        # both carry the same model name, and only the budget distinguishes them.
+        budget = "-"
         provider = MESSAGES.default_provider or DEFAULT_PROVIDER
 
         if body and self.path.startswith("/v1/messages"):
             try:
                 data = json.loads(body)
                 model_in = data.get("model") or ""
+                budget = data.get("max_tokens") or "-"
                 spec, provider = MESSAGES.route(model_in)
                 upstream_model = spec["name"]
                 data["model"] = upstream_model
@@ -370,7 +374,8 @@ class Handler(BaseHTTPRequestHandler):
             resp = conn.getresponse()
             content_type = resp.getheader("Content-Type") or ""
             log(f"{self.command} {self.path} model={model_in or '-'} think={think} "
-                f"-> {provider.name}:{upstream_model} status={resp.status}")
+                f"max_tokens={budget} -> {provider.name}:{upstream_model} "
+                f"status={resp.status}")
 
             if "text/event-stream" in content_type:
                 # Stream through so Claude renders tokens as they arrive.
