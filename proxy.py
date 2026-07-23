@@ -102,19 +102,31 @@ class Provider:
             self._cached_key = self._from_keychain()
         return self._cached_key
 
-    def require_key(self):
+    def key_problem(self):
+        """Return a human-readable reason this provider cannot authenticate, or None.
+
+        Deliberately not fatal. One provider with an unsaved key must not stop the
+        others from serving: the failure belongs to the request that needs that
+        key, not to the whole process.
+        """
         if self.auth == "passthrough":
-            return
+            return None
         if not self.key_env and not self.keychain:
-            sys.exit(f"provider '{self.name}' needs a key_env, a keychain, "
-                     "or \"auth\": \"passthrough\".")
+            return (f"provider '{self.name}' needs a key_env, a keychain, "
+                    "or \"auth\": \"passthrough\".")
         if not self.key:
             where = " or ".join(filter(None, [
                 f"${self.key_env}" if self.key_env else "",
                 f"Keychain service '{self.keychain}'" if self.keychain else "",
             ]))
-            sys.exit(f"no key found for provider '{self.name}' (looked in {where}). "
-                     "Set it (see README) and restart the proxy.")
+            return f"no key found for provider '{self.name}' (looked in {where})"
+        return None
+
+    def require_key(self):
+        problem = self.key_problem()
+        if problem:
+            print(f"warning: {problem}; routes using it will return 503", file=sys.stderr)
+            log(f"startup warning: {problem}")
 
     def auth_headers(self, incoming):
         if self.auth == "passthrough":
@@ -138,7 +150,10 @@ class Router:
     """A front end's model map. Each route may name its own provider."""
 
     def __init__(self, models, default_provider, providers):
-        self.models = models or {}
+        # Keys beginning with "_" are comments, not routes. The example configs use
+        # them, so treating one as a route crashes on a perfectly valid file.
+        self.models = {k: v for k, v in (models or {}).items()
+                       if not k.startswith("_") and isinstance(v, dict)}
         self.default_provider = default_provider
         self.providers = providers
         # Keywords are matched in the order listed; "default" is the fallback.
@@ -185,7 +200,9 @@ class Router:
         return out
 
 
-PROVIDERS = {name: Provider(name, spec) for name, spec in (CFG.get("providers") or {}).items()}
+PROVIDERS = {name: Provider(name, spec)
+             for name, spec in (CFG.get("providers") or {}).items()
+             if not name.startswith("_") and isinstance(spec, dict)}
 
 # Backward compatible: a single `upstream` block becomes the default provider.
 DEFAULT_PROVIDER = None
@@ -284,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
                         if spec.get("name") and spec.get("name") != "passthrough"})
         self._send_json(200, {
             "object": "list",
-            "data": [{"id": n, "object": "model", "owned_by": "anyclaude"} for n in names],
+            "data": [{"id": n, "object": "model", "owned_by": "claudecodex"} for n in names],
         })
 
     # -- /v1/messages : Anthropic front end, Anthropic upstream ----------
@@ -325,6 +342,14 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(501, {"error": {
                 "type": "not_configured",
                 "message": "No provider is configured for /v1/messages.",
+            }})
+            return
+        problem = provider.key_problem()
+        if problem:
+            log(f"{self.path} model={model_in or '-'} blocked: {problem}")
+            self._send_json(503, {"type": "error", "error": {
+                "type": "authentication_error",
+                "message": f"{problem}. Save it, then restart the proxy.",
             }})
             return
 
@@ -392,6 +417,14 @@ class Handler(BaseHTTPRequestHandler):
 
         model_in = req.get("model") or ""
         spec, provider = CODEX.route(model_in)
+        problem = provider.key_problem()
+        if problem:
+            log(f"/v1/responses model={model_in or '-'} blocked: {problem}")
+            self._send_json(503, {"error": {
+                "type": "authentication_error",
+                "message": f"{problem}. Save it, then restart the proxy.",
+            }})
+            return
         upstream_model = spec["name"]
         wants_stream = bool(req.get("stream", True))
         chat_body, custom_names, dropped = codex_bridge.responses_to_chat(
@@ -488,7 +521,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     summary = ", ".join(f"{name} -> {p.base}" for name, p in PROVIDERS.items())
-    banner = f"anyclaude proxy on 127.0.0.1:{PORT}\n  providers: {summary}"
+    banner = f"claudecodex proxy on 127.0.0.1:{PORT}\n  providers: {summary}"
     banner += f"\n  /v1/messages routes: {MESSAGES.describe()}"
     if CODEX:
         banner += f"\n  /v1/responses routes: {CODEX.describe()}"

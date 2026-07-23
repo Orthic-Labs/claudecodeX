@@ -1,8 +1,8 @@
 #!/bin/sh
 # Save a provider key into the macOS login Keychain.
 #
-#   ./mac/save-key.sh ANYCLAUDE_MINIMAX_API_KEY
-#   ./mac/save-key.sh ANYCLAUDE_DASHSCOPE_API_KEY
+#   ./mac/save-key.sh CLAUDECODEX_MINIMAX_API_KEY
+#   ./mac/save-key.sh CLAUDECODEX_DASHSCOPE_API_KEY
 #
 # The name you pass is the Keychain SERVICE name. Put the same string in your
 # config.json as the provider's "keychain" field and the proxy reads it from
@@ -16,7 +16,7 @@ set -eu
 SERVICE="${1:-}"
 if [ -z "$SERVICE" ]; then
   echo "usage: $0 KEYCHAIN_SERVICE_NAME" >&2
-  echo "example: $0 ANYCLAUDE_MINIMAX_API_KEY" >&2
+  echo "example: $0 CLAUDECODEX_MINIMAX_API_KEY" >&2
   exit 2
 fi
 ACCOUNT="${2:-$USER}"
@@ -41,7 +41,7 @@ fi
 security add-generic-password \
   -U -a "$ACCOUNT" -s "$SERVICE" \
   -T /usr/bin/security \
-  -D "anyclaude provider key" \
+  -D "claudecodex provider key" \
   -w "$VALUE"
 
 # Prove it reads back before reporting success, without printing the value.

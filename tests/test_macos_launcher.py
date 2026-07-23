@@ -11,7 +11,7 @@ from unittest.mock import patch
 class MacLauncherTest(unittest.TestCase):
     def setUp(self):
         self.launcher = (
-            Path(__file__).parents[1] / "mac" / "anyclaude-macos.sh"
+            Path(__file__).parents[1] / "mac" / "claudecodex-macos.sh"
         ).read_text()
 
     def test_profile_state_is_isolated_and_seed_uses_repo_root(self):
@@ -63,11 +63,11 @@ class MacLauncherTest(unittest.TestCase):
 
     def test_routing_check_uses_configured_port_without_paid_inference(self):
         self.assertIn('"http://127.0.0.1:$PORT/health"', self.launcher)
-        self.assertNotIn('"model":"anyclaude', self.launcher)
+        self.assertNotIn('"model":"claudecodex', self.launcher)
 
     def _run_share_block(self, home, config, environment=None):
         """Execute the launcher's skills/agents linking block against a fake HOME."""
-        marker = 'if [ "${ANYCLAUDE_SHARE_CLAUDE_CODE:-1}" = 1 ]; then'
+        marker = 'if [ "${CLAUDECODEX_SHARE_CLAUDE_CODE:-1}" = 1 ]; then'
         block = marker + self.launcher.split(marker, 1)[1].split("\nfi\n", 1)[0] + "\nfi\n"
         subprocess.run(
             ["sh", "-e", "-c", block],
@@ -132,7 +132,7 @@ class MacLauncherTest(unittest.TestCase):
             (home / ".claude" / "skills").mkdir(parents=True)
 
             self._run_share_block(
-                home, config, {"ANYCLAUDE_SHARE_CLAUDE_CODE": "0"}
+                home, config, {"CLAUDECODEX_SHARE_CLAUDE_CODE": "0"}
             )
 
             self.assertFalse((config / "skills").exists())

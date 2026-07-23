@@ -1,12 +1,12 @@
 # macOS setup and Claude Desktop sandbox policy
 
-The macOS launcher opens an isolated anyclaude profile beside the normal subscription Claude app, so both sessions can remain active on one Mac. This guide covers isolated profiles, GUI environment variables, case-insensitive paths, and Claude Desktop's managed Bash sandbox.
+The macOS launcher opens an isolated ClaudeCodeX profile beside the normal subscription Claude app, so both sessions can remain active on one Mac. This guide covers isolated profiles, GUI environment variables, case-insensitive paths, and Claude Desktop's managed Bash sandbox.
 
 ## Daily use
 
 1. Start the localhost proxy.
 2. Open **Claude** normally for the Anthropic subscription session.
-3. Open `/Applications/anyclaude.app` for the gateway-backed session.
+3. Open `/Applications/ClaudeCodeX.app` for the gateway-backed session.
 
 Both use the installed Claude Desktop binary, but their Desktop, embedded Claude Code, and default Cowork state remain separate.
 
@@ -22,27 +22,27 @@ Prerequisites:
 From the repository root:
 
 ```bash
-./mac/anyclaude-macos.sh --install-app
+./mac/claudecodex-macos.sh --install-app
 ```
 
-This creates `/Applications/anyclaude.app`. It is a small launcher, not a second Claude installation. Claude Desktop continues to update normally.
+This creates `/Applications/ClaudeCodeX.app`. It is a small launcher, not a second Claude installation. Claude Desktop continues to update normally.
 
 Run without installing the Dock launcher:
 
 ```bash
-./mac/anyclaude-macos.sh
+./mac/claudecodex-macos.sh
 ```
 
-The default profile is `~/ClaudeProfiles/anyclaude-profile`. Override it with `ANYCLAUDE_PROFILE`.
+The default profile is `~/ClaudeProfiles/claudecodex-profile`. Override it with `CLAUDECODEX_PROFILE`.
 
 ## What the launcher isolates
 
 | State | Location |
 |---|---|
-| Claude Desktop profile | `~/ClaudeProfiles/anyclaude-profile` |
-| Claude Code config/runtime | `~/ClaudeProfiles/anyclaude-profile/claude-config` |
-| Cowork-owned files | `~/ClaudeProfiles/anyclaude-profile/cowork-user-files` |
-| Gateway model seed | `~/ClaudeProfiles/anyclaude-profile/configLibrary` |
+| Claude Desktop profile | `~/ClaudeProfiles/claudecodex-profile` |
+| Claude Code config/runtime | `~/ClaudeProfiles/claudecodex-profile/claude-config` |
+| Cowork-owned files | `~/ClaudeProfiles/claudecodex-profile/cowork-user-files` |
+| Gateway model seed | `~/ClaudeProfiles/claudecodex-profile/configLibrary` |
 
 Both `CLAUDE_USER_DATA_DIR` and `CLAUDE_CONFIG_DIR` are intentionally set. Isolating only Desktop state is insufficient when `~/.claude` resolves inside a selected workspace.
 
@@ -55,9 +55,9 @@ The launcher also migrates only Cowork's default `~/Claude` location. On a case-
 | `~/.claude/skills` | Symlinked into the isolated `claude-config`, refreshed on every launch |
 | `~/.claude/agents` | Symlinked into the isolated `claude-config`, refreshed on every launch |
 
-Isolation is for auth and Desktop state, not for your skill library. Without these links the isolated `CLAUDE_CONFIG_DIR` contains no `skills/` or `agents/` at all, so Claude Code inside the anyclaude window silently has none of the skills and subagents you installed. They are linked rather than copied, so `~/.claude` stays the single source of truth and edits appear in both instances. The launcher re-points a stale link but never overwrites a real directory you placed there.
+Isolation is for auth and Desktop state, not for your skill library. Without these links the isolated `CLAUDE_CONFIG_DIR` contains no `skills/` or `agents/` at all, so Claude Code inside the ClaudeCodeX window silently has none of the skills and subagents you installed. They are linked rather than copied, so `~/.claude` stays the single source of truth and edits appear in both instances. The launcher re-points a stale link but never overwrites a real directory you placed there.
 
-`settings.json` is deliberately not shared. It commonly pins an Anthropic-only model name that the gateway provider does not serve, so linking it would fight the gateway route. Hooks defined there therefore do not run in the anyclaude window. Set `ANYCLAUDE_SHARE_CLAUDE_CODE=0` to seal the profile completely.
+`settings.json` is deliberately not shared. It commonly pins an Anthropic-only model name that the gateway provider does not serve, so linking it would fight the gateway route. Hooks defined there therefore do not run in the ClaudeCodeX window. Set `CLAUDECODEX_SHARE_CLAUDE_CODE=0` to seal the profile completely.
 
 ## Provider keys and GUI apps
 
@@ -65,7 +65,7 @@ A process opened from Finder or the Dock does not reliably inherit exports from 
 
 1. Export the provider key in a terminal.
 2. Start `python3 proxy.py` there and leave it running.
-3. Open `/Applications/anyclaude.app`.
+3. Open `/Applications/ClaudeCodeX.app`.
 
 If a login service starts the proxy, put the export in the login environment it actually loads, commonly `~/.zprofile`. Never put the provider key in `config.json`, the Gateway seed, an AppleScript app, or a LaunchAgent plist.
 
@@ -147,7 +147,7 @@ This keeps the Bash sandbox enabled while allowing new domains or an unsandboxed
 5. Ask Claude Code to run:
 
 ```bash
-git ls-remote https://github.com/bogusyogi/anyclaude.git HEAD
+git ls-remote https://github.com/Orthic-Labs/claudecodeX.git HEAD
 ```
 
 The first access should enter the approval flow instead of failing immediately with a CONNECT 403.
@@ -179,7 +179,7 @@ ps eww -ax | grep '[C]laude.app/Contents/MacOS/Claude' | \
   grep -o 'CLAUDE_\(USER_DATA_DIR\|CONFIG_DIR\)=[^ ]*'
 ```
 
-Both paths should point inside `~/ClaudeProfiles/anyclaude-profile`.
+Both paths should point inside `~/ClaudeProfiles/claudecodex-profile`.
 
 ### Dock launcher opens subscription Claude
 
@@ -187,4 +187,4 @@ Claude Desktop's undocumented `CLAUDE_USER_DATA_DIR` behavior may have changed. 
 
 ### Dock icon is stale
 
-Run `./mac/anyclaude-macos.sh --install-app` again. The installer refreshes LaunchServices after replacing the wrapper icon.
+Run `./mac/claudecodex-macos.sh --install-app` again. The installer refreshes LaunchServices after replacing the wrapper icon.

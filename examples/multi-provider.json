@@ -15,7 +15,7 @@
       "prefix": "/anthropic",
       "scheme": "https",
       "auth_header": "x-api-key",
-      "keychain": "ANYCLAUDE_MINIMAX_API_KEY",
+      "keychain": "CLAUDECODEX_MINIMAX_API_KEY",
       "key_env": "MINIMAX_API_KEY"
     },
     "minimax-openai": {
@@ -23,7 +23,7 @@
       "prefix": "/v1",
       "scheme": "https",
       "auth_header": "authorization",
-      "keychain": "ANYCLAUDE_MINIMAX_API_KEY",
+      "keychain": "CLAUDECODEX_MINIMAX_API_KEY",
       "key_env": "MINIMAX_API_KEY"
     },
     "alibaba": {
@@ -31,7 +31,7 @@
       "prefix": "/apps/anthropic",
       "scheme": "https",
       "auth_header": "authorization",
-      "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+      "keychain": "CLAUDECODEX_DASHSCOPE_API_KEY",
       "key_env": "DASHSCOPE_API_KEY"
     },
     "alibaba-openai": {
@@ -39,7 +39,7 @@
       "prefix": "/compatible-mode/v1",
       "scheme": "https",
       "auth_header": "authorization",
-      "keychain": "ANYCLAUDE_DASHSCOPE_API_KEY",
+      "keychain": "CLAUDECODEX_DASHSCOPE_API_KEY",
       "key_env": "DASHSCOPE_API_KEY"
     }
   },

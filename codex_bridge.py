@@ -5,7 +5,7 @@ Responses API. Most third-party providers (including Alibaba Model Studio's
 `/compatible-mode/v1`) only speak Chat Completions. This module is the missing
 adapter:
 
-    Codex --/v1/responses--> anyclaude --/chat/completions--> provider
+    Codex --/v1/responses--> claudecodex --/chat/completions--> provider
 
 Pure functions plus one small streaming state machine. Standard library only, no
 network calls, so every rule here is unit testable offline.

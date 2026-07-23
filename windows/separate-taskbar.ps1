@@ -1,4 +1,4 @@
-# Give the anyclaude window its own taskbar button.
+# Give the claudecodex window its own taskbar button.
 #
 # Claude Desktop does not give the isolated instance a distinct app identity, so
 # Windows groups both windows under one taskbar button. Windows DOES honour
@@ -11,8 +11,8 @@
 
 param(
     [Parameter(Mandatory)][int]$TargetPid,
-    [string]$Aumid = 'anyclaude.Instance',
-    [string]$DisplayName = 'anyclaude',
+    [string]$Aumid = 'claudecodex.Instance',
+    [string]$DisplayName = 'claudecodex',
     [string]$IconResource = ''
 )
 
@@ -87,4 +87,4 @@ $hwnd = $proc.MainWindowHandle
 if ($hwnd -eq [IntPtr]::Zero) { throw "pid $TargetPid has no main window yet" }
 
 [WindowAumid]::Apply($hwnd, $Aumid, $DisplayName, $IconResource)
-Write-Host "[anyclaude] taskbar identity set: '$DisplayName' ($Aumid) on pid $TargetPid"
+Write-Host "[claudecodex] taskbar identity set: '$DisplayName' ($Aumid) on pid $TargetPid"

@@ -1,8 +1,8 @@
-# anyclaude launcher (Windows) — starts the proxy if needed, then opens an isolated
+# claudecodex launcher (Windows) — starts the proxy if needed, then opens an isolated
 # Claude Desktop instance pointed at it, with its own taskbar button.
 $ErrorActionPreference = 'Stop'
 $root       = Split-Path $PSScriptRoot -Parent           # repo root
-$profileDir = Join-Path $env:LOCALAPPDATA 'anyclaude\profile'
+$profileDir = Join-Path $env:LOCALAPPDATA 'claudecodex\profile'
 $claudeConfigDir = Join-Path $profileDir 'claude-config'
 $coworkDir  = Join-Path $profileDir 'cowork-user-files'
 $desktopConfig = Join-Path $profileDir 'claude_desktop_config.json'
@@ -58,7 +58,7 @@ for ($i = 0; $i -lt 10; $i++) {
     } catch {}
     Start-Sleep -Milliseconds 500
 }
-if (-not $healthy) { throw "anyclaude proxy on port $port did not pass /health. Check the provider key and proxy.log." }
+if (-not $healthy) { throw "claudecodex proxy on port $port did not pass /health. Check the provider key and proxy.log." }
 
 # --- 2. resolve the current official updater-managed Claude Desktop build ---
 $claude = Resolve-ClaudeDesktopInstall
@@ -70,8 +70,8 @@ if ((Test-Path $asar) -and -not ([System.IO.File]::ReadAllText($asar, [System.Te
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.MessageBox]::Show(
         "Claude Desktop $($claude.DisplayVersion) no longer supports CLAUDE_USER_DATA_DIR.`n`n" +
-        "anyclaude cannot isolate the second instance on this build. See the repo README.",
-        'anyclaude', 'OK', 'Warning') | Out-Null
+        "claudecodex cannot isolate the second instance on this build. See the repo README.",
+        'claudecodex', 'OK', 'Warning') | Out-Null
     exit 1
 }
 
@@ -79,13 +79,13 @@ New-Item -ItemType Directory -Force -Path $profileDir, $claudeConfigDir, $cowork
 
 # The isolated CLAUDE_CONFIG_DIR is meant to separate auth and Desktop state, but it also hides the
 # skills and subagents already installed in ~/.claude: they simply do not exist in this profile, so
-# Claude Code inside the anyclaude window silently has none of them. Link them back rather than copy,
+# Claude Code inside the claudecodex window silently has none of them. Link them back rather than copy,
 # so the originals stay the single source of truth and edits land in both instances. Junctions are used
 # because they need no elevation or Developer Mode, unlike symlinks.
 #
 # settings.json is deliberately NOT linked. It commonly pins an Anthropic-only model name, which the
-# gateway provider does not serve. Set ANYCLAUDE_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
-if ($env:ANYCLAUDE_SHARE_CLAUDE_CODE -ne '0') {
+# gateway provider does not serve. Set CLAUDECODEX_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
+if ($env:CLAUDECODEX_SHARE_CLAUDE_CODE -ne '0') {
     foreach ($share in 'skills', 'agents') {
         $shareSource = Join-Path $HOME ".claude\$share"
         $shareTarget = Join-Path $claudeConfigDir $share
@@ -99,7 +99,7 @@ if ($env:ANYCLAUDE_SHARE_CLAUDE_CODE -ne '0') {
 }
 
 # Keep embedded Claude Code and Cowork state out of the subscription profile. Preserve a custom
-# Cowork path; migrate only the default ~/Claude location into the isolated anyclaude profile.
+# Cowork path; migrate only the default ~/Claude location into the isolated claudecodex profile.
 if (Test-Path $desktopConfig) {
     $desktop = Get-Content $desktopConfig -Raw | ConvertFrom-Json
 } else {

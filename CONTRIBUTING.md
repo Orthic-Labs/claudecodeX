@@ -1,6 +1,6 @@
 # Contributing
 
-anyclaude is a small, standard-library proxy plus two launchers. The most useful contribution is a
+ClaudeCodeX is a small, standard-library proxy plus two launchers. The most useful contribution is a
 new provider that people can actually use, so that flow is documented first.
 
 ## Add a provider
@@ -58,7 +58,7 @@ Run the full check before opening a PR:
 ```bash
 python3 -m py_compile proxy.py
 python3 -m unittest discover -s tests -v
-sh -n mac/anyclaude-macos.sh
+sh -n mac/claudecodex-macos.sh
 for file in examples/*.json configLibrary/*.json; do python3 -m json.tool "$file" >/dev/null || exit 1; done
 git diff --check
 ```

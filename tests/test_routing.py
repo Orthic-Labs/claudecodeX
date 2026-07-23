@@ -77,9 +77,9 @@ class MultiProviderRoutingTest(unittest.TestCase):
             "port": cls.port,
             "providers": {
                 "alpha": {"host": f"127.0.0.1:{cls.up_a}", "prefix": "", "scheme": "http",
-                          "auth_header": "x-api-key", "key_env": "ANYCLAUDE_KEY_A"},
+                          "auth_header": "x-api-key", "key_env": "CLAUDECODEX_KEY_A"},
                 "beta": {"host": f"127.0.0.1:{cls.up_b}", "prefix": "", "scheme": "http",
-                         "auth_header": "authorization", "key_env": "ANYCLAUDE_KEY_B"},
+                         "auth_header": "authorization", "key_env": "CLAUDECODEX_KEY_B"},
                 "mine": {"host": f"127.0.0.1:{cls.up_a}", "prefix": "", "scheme": "http",
                          "auth": "passthrough"},
             },
@@ -97,7 +97,7 @@ class MultiProviderRoutingTest(unittest.TestCase):
         cls.process = subprocess.Popen(
             [sys.executable, str(cls.root / "proxy.py"), str(cls.root / "config.json")],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            env={**os.environ, "ANYCLAUDE_KEY_A": "key-a", "ANYCLAUDE_KEY_B": "key-b"})
+            env={**os.environ, "CLAUDECODEX_KEY_A": "key-a", "CLAUDECODEX_KEY_B": "key-b"})
         for _ in range(80):
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{cls.port}/health", timeout=0.2):
@@ -176,6 +176,49 @@ class MultiProviderRoutingTest(unittest.TestCase):
         self.assertEqual(payload["codex_routes"]["glm|deepseek"], "beta:passthrough")
 
 
+class ShippedExamplesTest(unittest.TestCase):
+    """Every example in examples/ must actually load.
+
+    The comment keys these files use are valid JSON but are not routes, so the
+    parser has to skip them. A shipped example that crashes the proxy is a bug.
+    """
+
+    def test_each_example_config_starts_the_proxy(self):
+        root = Path(__file__).parents[1]
+        examples = sorted((root / "examples").glob("*.json"))
+        self.assertTrue(examples, "no example configs found")
+        for example in examples:
+            with self.subTest(example=example.name):
+                work = Path(tempfile.mkdtemp())
+                self.addCleanup(shutil.rmtree, work, True)
+                for name in ("proxy.py", "codex_bridge.py"):
+                    shutil.copy2(root / name, work / name)
+                config = json.loads(example.read_text())
+                config["port"] = _free_port()
+                # Point every provider at a dead local port: this asserts the file
+                # parses and every route resolves, without any network call.
+                for spec in config.get("providers", {}).values():
+                    if isinstance(spec, dict):
+                        spec.update({"host": "127.0.0.1:9", "scheme": "http"})
+                        spec.pop("keychain", None)
+                        spec["key_env"] = "ANYCLAUDE_EXAMPLE_KEY"
+                for block in ("upstream", "codex"):
+                    spec = config.get(block)
+                    if isinstance(spec, dict) and spec.get("host"):
+                        spec.update({"host": "127.0.0.1:9", "scheme": "http"})
+                        spec.pop("keychain", None)
+                        spec["key_env"] = "ANYCLAUDE_EXAMPLE_KEY"
+                (work / "config.json").write_text(json.dumps(config))
+                process = subprocess.Popen(
+                    [sys.executable, str(work / "proxy.py"), str(work / "config.json")],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    env={**os.environ, "ANYCLAUDE_EXAMPLE_KEY": "k"})
+                self.addCleanup(lambda p=process: (p.terminate(), p.wait(timeout=5)))
+                time.sleep(1.2)
+                if process.poll() is not None:
+                    self.fail(f"{example.name} failed to start:\n{process.stderr.read()}")
+
+
 class ConfigValidationTest(unittest.TestCase):
     def _start(self, config, env=None):
         root = Path(tempfile.mkdtemp())
@@ -192,22 +235,49 @@ class ConfigValidationTest(unittest.TestCase):
         result = self._start({
             "port": _free_port(),
             "providers": {"alpha": {"host": "127.0.0.1:9", "scheme": "http",
-                                    "key_env": "ANYCLAUDE_KEY_A"}},
+                                    "key_env": "CLAUDECODEX_KEY_A"}},
             "models": {"default": {"provider": "typo", "name": "m"}},
-        }, {"ANYCLAUDE_KEY_A": "k"})
+        }, {"CLAUDECODEX_KEY_A": "k"})
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unknown provider 'typo'", result.stderr)
 
-    def test_missing_key_names_the_provider_it_belongs_to(self):
-        result = self._start({
-            "port": _free_port(),
+    def test_missing_key_warns_but_does_not_stop_the_proxy(self):
+        # One unsaved key must not take down providers that are configured.
+        port = _free_port()
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        for name in ("proxy.py", "codex_bridge.py"):
+            shutil.copy2(Path(__file__).parents[1] / name, root / name)
+        (root / "config.json").write_text(json.dumps({
+            "port": port,
             "providers": {"alpha": {"host": "127.0.0.1:9", "scheme": "http",
-                                    "key_env": "ANYCLAUDE_ABSENT"}},
+                                    "key_env": "CLAUDECODEX_ABSENT"}},
             "models": {"default": {"provider": "alpha", "name": "m"}},
-        })
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("$ANYCLAUDE_ABSENT", result.stderr)
-        self.assertIn("provider 'alpha'", result.stderr)
+        }))
+        process = subprocess.Popen(
+            [sys.executable, str(root / "proxy.py"), str(root / "config.json")],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.addCleanup(lambda: (process.terminate(), process.wait(timeout=5)))
+        for _ in range(80):
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=0.2):
+                    break
+            except OSError:
+                time.sleep(0.025)
+        else:
+            self.fail("proxy exited instead of warning about the missing key")
+
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{port}/v1/messages",
+            data=json.dumps({"model": "claude-opus-4-8", "max_tokens": 8,
+                             "messages": [{"role": "user", "content": "hi"}]}).encode(),
+            headers={"Content-Type": "application/json"})
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(request, timeout=5)
+        self.assertEqual(ctx.exception.code, 503)
+        detail = json.loads(ctx.exception.read())["error"]["message"]
+        self.assertIn("$CLAUDECODEX_ABSENT", detail)
+        self.assertIn("provider 'alpha'", detail)
 
     def test_unused_provider_does_not_require_a_key(self):
         # Only routed providers are required, so one config can list every provider
@@ -215,8 +285,8 @@ class ConfigValidationTest(unittest.TestCase):
         config = {
             "port": _free_port(),
             "providers": {
-                "used": {"host": "127.0.0.1:9", "scheme": "http", "key_env": "ANYCLAUDE_KEY_A"},
-                "unused": {"host": "127.0.0.1:9", "scheme": "http", "key_env": "ANYCLAUDE_ABSENT"},
+                "used": {"host": "127.0.0.1:9", "scheme": "http", "key_env": "CLAUDECODEX_KEY_A"},
+                "unused": {"host": "127.0.0.1:9", "scheme": "http", "key_env": "CLAUDECODEX_ABSENT"},
             },
             "models": {"default": {"provider": "used", "name": "m"}},
         }
@@ -228,7 +298,7 @@ class ConfigValidationTest(unittest.TestCase):
         process = subprocess.Popen(
             [sys.executable, str(root / "proxy.py"), str(root / "config.json")],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            env={**os.environ, "ANYCLAUDE_KEY_A": "k"})
+            env={**os.environ, "CLAUDECODEX_KEY_A": "k"})
         self.addCleanup(lambda: (process.terminate(), process.wait(timeout=5)))
         time.sleep(1.0)
         self.assertIsNone(process.poll(), "proxy exited despite the unused provider being routed away")
@@ -238,12 +308,12 @@ class ConfigValidationTest(unittest.TestCase):
 class KeychainKeyTest(unittest.TestCase):
     """The proxy reads a provider key from the login Keychain on macOS."""
 
-    SERVICE = "ANYCLAUDE_UNITTEST_KEY"
+    SERVICE = "CLAUDECODEX_UNITTEST_KEY"
     SECRET = "keychain-secret-value"
 
     @classmethod
     def setUpClass(cls):
-        cls.account = os.environ.get("USER") or "anyclaude-test"
+        cls.account = os.environ.get("USER") or "claudecodex-test"
         subprocess.run(["/usr/bin/security", "add-generic-password", "-U",
                         "-a", cls.account, "-s", cls.SERVICE,
                         "-T", "/usr/bin/security", "-w", cls.SECRET],
@@ -274,7 +344,7 @@ class KeychainKeyTest(unittest.TestCase):
             "providers": {"vault": spec},
             "models": {"default": {"provider": "vault", "name": "m"}},
         }))
-        clean = {k: v for k, v in os.environ.items() if k != "ANYCLAUDE_VAULT_KEY"}
+        clean = {k: v for k, v in os.environ.items() if k != "CLAUDECODEX_VAULT_KEY"}
         process = subprocess.Popen(
             [sys.executable, str(root / "proxy.py"), str(root / "config.json")],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -303,12 +373,12 @@ class KeychainKeyTest(unittest.TestCase):
 
     def test_environment_variable_wins_over_the_keychain(self):
         # One config works on both machines: Windows sets the variable, macOS does not.
-        call = self._call({"keychain": self.SERVICE, "key_env": "ANYCLAUDE_VAULT_KEY"},
-                          {"ANYCLAUDE_VAULT_KEY": "env-wins"})
+        call = self._call({"keychain": self.SERVICE, "key_env": "CLAUDECODEX_VAULT_KEY"},
+                          {"CLAUDECODEX_VAULT_KEY": "env-wins"})
         self.assertEqual(call["x-api-key"], "env-wins")
 
     def test_keychain_falls_back_when_the_variable_is_absent(self):
-        call = self._call({"keychain": self.SERVICE, "key_env": "ANYCLAUDE_VAULT_KEY"})
+        call = self._call({"keychain": self.SERVICE, "key_env": "CLAUDECODEX_VAULT_KEY"})
         self.assertEqual(call["x-api-key"], self.SECRET)
 
     def test_missing_keychain_item_names_both_places_it_looked(self):
@@ -319,16 +389,22 @@ class KeychainKeyTest(unittest.TestCase):
         (root / "config.json").write_text(json.dumps({
             "port": _free_port(),
             "providers": {"vault": {"host": "127.0.0.1:9", "scheme": "http",
-                                    "keychain": "ANYCLAUDE_NO_SUCH_ITEM",
-                                    "key_env": "ANYCLAUDE_NO_SUCH_VAR"}},
+                                    "keychain": "CLAUDECODEX_NO_SUCH_ITEM",
+                                    "key_env": "CLAUDECODEX_NO_SUCH_VAR"}},
             "models": {"default": {"provider": "vault", "name": "m"}},
         }))
-        result = subprocess.run(
+        # The proxy stays up and warns; the warning must name both lookups so the
+        # fix is obvious without reading the config.
+        process = subprocess.Popen(
             [sys.executable, str(root / "proxy.py"), str(root / "config.json")],
-            capture_output=True, text=True, timeout=30)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("$ANYCLAUDE_NO_SUCH_VAR", result.stderr)
-        self.assertIn("ANYCLAUDE_NO_SUCH_ITEM", result.stderr)
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        self.addCleanup(lambda: (process.terminate(), process.wait(timeout=5)))
+        time.sleep(1.2)
+        self.assertIsNone(process.poll(), "proxy exited on a missing key")
+        process.terminate()
+        stderr = process.communicate(timeout=5)[1]
+        self.assertIn("$CLAUDECODEX_NO_SUCH_VAR", stderr)
+        self.assertIn("CLAUDECODEX_NO_SUCH_ITEM", stderr)
 
 
 if __name__ == "__main__":

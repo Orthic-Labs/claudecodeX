@@ -1,5 +1,5 @@
 #!/bin/sh
-# Second Claude Desktop instance, routed through the configured anyclaude proxy.
+# Second Claude Desktop instance, routed through the configured claudecodex proxy.
 #
 # The isolated userData dir is what keeps this off the subscription profile AND suppresses the
 # app's relocation to a `Claude-3p` profile (see README.md — if a
@@ -12,15 +12,15 @@
 set -e
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-PROFILE="${ANYCLAUDE_PROFILE:-$HOME/ClaudeProfiles/anyclaude-profile}"
+PROFILE="${CLAUDECODEX_PROFILE:-$HOME/ClaudeProfiles/claudecodex-profile}"
 CONFIG="$PROFILE/claude-config"
 COWORK_FILES="$PROFILE/cowork-user-files"
 DESKTOP_CONFIG="$PROFILE/claude_desktop_config.json"
 BIN="/Applications/Claude.app/Contents/MacOS/Claude"
-APP="${ANYCLAUDE_APP:-/Applications/anyclaude.app}"
-PYTHON="${ANYCLAUDE_PYTHON:-$(command -v python3 || true)}"
+APP="${CLAUDECODEX_APP:-/Applications/ClaudeCodeX.app}"
+PYTHON="${CLAUDECODEX_PYTHON:-$(command -v python3 || true)}"
 
-# `--install-app` puts a launcher named "anyclaude" in /Applications so the Applications folder tells
+# `--install-app` puts a launcher named "claudecodex" in /Applications so the Applications folder tells
 # the two instances apart. It only STARTS the instance: the running window is still Claude Desktop's
 # own bundle, so it keeps its Claude icon and auto-updates normally. Built with osacompile because a
 # hand-rolled bundle whose executable exits immediately is rejected by LaunchServices (-10669).
@@ -29,12 +29,12 @@ if [ "${1:-}" = "--install-app" ]; then
   [ -x "$PYTHON" ] || { echo "python3 not found on PATH" >&2; exit 1; }
   rm -rf "$APP"
   osacompile -o "$APP" \
-    -e "do shell script \"ANYCLAUDE_PYTHON='$PYTHON' '$self' --foreground > /dev/null 2>&1 &\"" || {
+    -e "do shell script \"CLAUDECODEX_PYTHON='$PYTHON' '$self' --foreground > /dev/null 2>&1 &\"" || {
     echo "osacompile failed (is $(dirname "$APP") writable?)" >&2
     exit 1
   }
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleName anyclaude' \
-    -c 'Add :CFBundleDisplayName string anyclaude' "$APP/Contents/Info.plist" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleName claudecodex' \
+    -c 'Add :CFBundleDisplayName string claudecodex' "$APP/Contents/Info.plist" >/dev/null 2>&1 || true
   # Wear Claude's icon: it launches Claude, so an AppleScript scroll would just be confusing.
   # Assets.car has to go — its AppIcon outranks CFBundleIconFile, which is why copying the .icns
   # alone left the applet icon in place.
@@ -79,13 +79,13 @@ done
 
 # CLAUDE_USER_DATA_DIR is undocumented, so a Claude Desktop update could drop it. This launcher
 # would then silently become a no-op and open an ordinary subscription Claude — harmless, but
-# baffling, and it would quietly bill Anthropic. Say so instead. (Mirrors launch-anyclaude.ps1.)
+# baffling, and it would quietly bill Anthropic. Say so instead. (Mirrors launch-claudecodex.ps1.)
 ASAR="/Applications/Claude.app/Contents/Resources/app.asar"
 if [ -f "$ASAR" ] && ! grep -qa "CLAUDE_USER_DATA_DIR" "$ASAR"; then
-  echo "Claude Desktop no longer supports CLAUDE_USER_DATA_DIR — the anyclaude instance cannot be" >&2
+  echo "Claude Desktop no longer supports CLAUDE_USER_DATA_DIR — the claudecodex instance cannot be" >&2
   echo "isolated on this build, so this would just open your subscription Claude. See" >&2
   echo "README.md." >&2
-  osascript -e 'display alert "anyclaude Desktop" message "Claude Desktop no longer supports CLAUDE_USER_DATA_DIR. This launcher would open your normal subscription Claude, so it stopped instead." as warning' >/dev/null 2>&1 || true
+  osascript -e 'display alert "claudecodex Desktop" message "Claude Desktop no longer supports CLAUDE_USER_DATA_DIR. This launcher would open your normal subscription Claude, so it stopped instead." as warning' >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -93,12 +93,12 @@ mkdir -p "$PROFILE" "$CONFIG" "$COWORK_FILES"
 
 # The isolated CLAUDE_CONFIG_DIR is meant to separate auth and Desktop state, but it also hides the
 # skills and subagents already installed in ~/.claude: they simply do not exist in this profile, so
-# Claude Code inside the anyclaude window silently has none of them. Link them back rather than copy,
+# Claude Code inside the claudecodex window silently has none of them. Link them back rather than copy,
 # so the originals stay the single source of truth and edits land in both instances.
 #
 # settings.json is deliberately NOT linked. It commonly pins an Anthropic-only model name, which the
-# gateway provider does not serve. Set ANYCLAUDE_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
-if [ "${ANYCLAUDE_SHARE_CLAUDE_CODE:-1}" = 1 ]; then
+# gateway provider does not serve. Set CLAUDECODEX_SHARE_CLAUDE_CODE=0 for a fully sealed profile.
+if [ "${CLAUDECODEX_SHARE_CLAUDE_CODE:-1}" = 1 ]; then
   for share in skills agents; do
     src="$HOME/.claude/$share"
     dst="$CONFIG/$share"
@@ -149,18 +149,18 @@ PY
 
 # Self-heal the gateway config from the repo seed. Without it the instance boots as a plain,
 # logged-out Claude and the OAuth deep-link trap makes recovery annoying. An existing config is
-# never overwritten, so in-app edits (model labels, extra entries) stick. (Mirrors launch-anyclaude.ps1.)
+# never overwritten, so in-app edits (model labels, extra entries) stick. (Mirrors launch-claudecodex.ps1.)
 SEED="$ROOT/configLibrary"
 if [ -d "$SEED" ] && [ ! -f "$PROFILE/configLibrary/_meta.json" ]; then
   mkdir -p "$PROFILE/configLibrary"
   cp "$SEED"/* "$PROFILE/configLibrary/"
-  echo "[anyclaude] gateway config missing -- restored from repo seed"
+  echo "[claudecodex] gateway config missing -- restored from repo seed"
 fi
 
-# --foreground: become the app (used by the anyclaude.app wrapper — LaunchServices kills a bundle
+# --foreground: become the app (used by the ClaudeCodeX.app wrapper — LaunchServices kills a bundle
 # whose executable returns immediately). Otherwise background it and hand the shell back.
 if [ "${1:-}" = "--foreground" ]; then
   exec env CLAUDE_USER_DATA_DIR="$PROFILE" CLAUDE_CONFIG_DIR="$CONFIG" "$BIN"
 fi
 CLAUDE_USER_DATA_DIR="$PROFILE" CLAUDE_CONFIG_DIR="$CONFIG" "$BIN" >/dev/null 2>&1 &
-echo "anyclaude Claude Desktop starting with profile: $PROFILE"
+echo "claudecodex Claude Desktop starting with profile: $PROFILE"

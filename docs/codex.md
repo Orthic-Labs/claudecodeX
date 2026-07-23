@@ -1,6 +1,6 @@
 # Codex
 
-anyclaude gives Codex CLI the same second-instance story it gives Claude: your
+ClaudeCodeX gives Codex CLI the same second-instance story it gives Claude: your
 ChatGPT subscription in one terminal, a third-party provider in another, both live.
 
 ## Why a proxy is required
@@ -15,7 +15,7 @@ How to fix: set `wire_api = "responses"` in your provider config.
 
 That string is in the shipping binary. Almost no third-party provider serves the
 Responses API, so pointing Codex straight at Alibaba, GLM, DeepSeek, or Kimi fails.
-anyclaude sits in the middle:
+ClaudeCodeX sits in the middle:
 
 ```text
 codex --/v1/responses--> 127.0.0.1:8801 --/chat/completions--> your provider
@@ -58,10 +58,10 @@ a pointer to this page instead of failing silently.
 Add to `~/.codex/config.toml`:
 
 ```toml
-[model_providers.anyclaude]
-name = "anyclaude (local proxy)"
+[model_providers.ClaudeCodeX]
+name = "ClaudeCodeX (local proxy)"
 base_url = "http://127.0.0.1:8801/v1"
-env_key = "ANYCLAUDE_PROXY_KEY"
+env_key = "CLAUDECODEX_PROXY_KEY"
 wire_api = "responses"
 request_max_retries = 2
 stream_max_retries = 2
@@ -72,7 +72,7 @@ stream_idle_timeout_ms = 300000
 placeholder is correct here:
 
 ```bash
-./mac/save-key.sh ANYCLAUDE_PROXY_KEY      # enter: proxy-dummy
+./mac/save-key.sh CLAUDECODEX_PROXY_KEY      # enter: proxy-dummy
 ```
 
 This block is inert. Codex keeps using your subscription until a profile selects it.
@@ -84,7 +84,7 @@ Codex layers `$CODEX_HOME/<name>.config.toml` over the base config when you pass
 
 ```toml
 model = "qwen3.7-max"
-model_provider = "anyclaude"
+model_provider = "ClaudeCodeX"
 ```
 
 ### 4. Run both

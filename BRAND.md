@@ -1,16 +1,16 @@
-# ANYCLAUDE identity
+# CLAUDECODEX identity
 
 ## Brand truth
 
-ANYCLAUDE helps developers keep subscription Claude open while running a second, isolated Claude session on another Anthropic-compatible model, and should feel like the missing second route rather than a replacement Claude brand.
+CLAUDECODEX helps developers keep subscription Claude open while running a second, isolated Claude session on another Anthropic-compatible model, and should feel like the missing second route rather than a replacement Claude brand.
 
 ## Signature mechanism
 
-The identity uses a **split route**: neutral `ANY` accepts the provider choice; Claude terracotta `CLAUDE` preserves the recognizable interface destination; a thin line moves from an open point to an arrow. Product proof uses a second split: subscription Claude on one side, anyclaude on the other, both visibly active on one desktop.
+The identity uses a **split route**: neutral `ANY` accepts the provider choice; Claude terracotta `CLAUDE` preserves the recognizable interface destination; a thin line moves from an open point to an arrow. Product proof uses a second split: subscription Claude on one side, ClaudeCodeX on the other, both visibly active on one desktop.
 
 ## Wordmark
 
-- Primary asset: `assets/anyclaude-wordmark.svg`
+- Primary asset: `assets/ClaudeCodeX-wordmark.svg`
 - Display construction: Tanker, converted to SVG outlines; the font file is not distributed
 - `ANY`: warm white `#F5F2EA`
 - `CLAUDE`: Claude terracotta `#D97757`

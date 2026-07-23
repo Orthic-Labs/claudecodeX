@@ -9,7 +9,7 @@ class WindowsLauncherTest(unittest.TestCase):
         self.launcher = (windows / "launch.ps1").read_text(encoding="utf-8")
         self.installer = (windows / "install.ps1").read_text(encoding="utf-8")
         self.taskbar = (windows / "separate-taskbar.ps1").read_text(encoding="utf-8")
-        self.wrapper = (windows / "anyclaude.vbs").read_text(encoding="utf-8")
+        self.wrapper = (windows / "claudecodex.vbs").read_text(encoding="utf-8")
         resolver = windows / "claude-install.ps1"
         self.resolver = resolver.read_text(encoding="utf-8") if resolver.exists() else ""
         self.readme = (self.root / "README.md").read_text(encoding="utf-8")

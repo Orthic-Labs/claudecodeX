@@ -12,7 +12,7 @@ End If
 
 launchExitCode = sh.Run("""" & powerShell & """ -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1 & """", 0, True)
 If launchExitCode <> 0 Then
-    errorLog = sh.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\anyclaude\profile\launcher-error.log"
-    MsgBox "anyclaude could not start. See " & errorLog & " for the exact error.", vbCritical, "anyclaude"
+    errorLog = sh.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\claudecodex\profile\launcher-error.log"
+    MsgBox "claudecodex could not start. See " & errorLog & " for the exact error.", vbCritical, "claudecodex"
 End If
 WScript.Quit launchExitCode

@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="assets/social-preview.png" alt="anyclaude: run two Claude Desktop instances simultaneously. Your Anthropic subscription in one, MiniMax, GLM, Kimi, or a local gateway in the other. Both open at once.">
+  <img src="assets/social-preview.png" alt="ClaudeCodeX: run two Claude Desktop instances simultaneously. Your Anthropic subscription in one, MiniMax, GLM, Kimi, or a local gateway in the other. Both open at once.">
 </h1>
 
 <p align="center">
@@ -20,18 +20,18 @@
 </p>
 
 <p align="center">
-  <sub>Real proof, in the card above: left is subscription Claude on Opus 4.8, right is an isolated anyclaude profile on MiniMax M3, and the taskbar shows both running at once.</sub>
+  <sub>Real proof, in the card above: left is subscription Claude on Opus 4.8, right is an isolated ClaudeCodeX profile on MiniMax M3, and the taskbar shows both running at once.</sub>
 </p>
 
 ### Your Claude stays your Claude
 
-anyclaude does not replace, patch, or reroute your subscription Claude. The launcher opens a second, isolated Claude profile pointed at another model provider, so both windows remain open and work independently.
+ClaudeCodeX does not replace, patch, or reroute your subscription Claude. The launcher opens a second, isolated Claude profile pointed at another model provider, so both windows remain open and work independently.
 
 ## What you get
 
 | Your regular Claude | Your second Claude |
 |---|---|
-| Opens normally | Opens from the **anyclaude** shortcut |
+| Opens normally | Opens from the **ClaudeCodeX** shortcut |
 | Uses your Anthropic subscription | Uses MiniMax, GLM, Kimi, LiteLLM, vLLM, or a local gateway |
 | Keeps its existing chats, projects, and settings | Separate Desktop, Claude Code, and Cowork state; shares your `~/.claude` skills and subagents |
 | Runs Anthropic models | Runs the upstream model you configure |
@@ -47,7 +47,7 @@ You keep the Claude interface and workflows you already know without committing 
 
 ## Features
 
-- **Two Claude Desktop instances at once.** Subscription Claude and an isolated anyclaude instance on a third-party provider, live together on one machine, each with its own profile.
+- **Two Claude Desktop instances at once.** Subscription Claude and an isolated ClaudeCodeX instance on a third-party provider, live together on one machine, each with its own profile.
 - **Claude Code through the proxy, interactive or headless.** Point Claude Code's `ANTHROPIC_BASE_URL` at the local proxy to run the CLI on the provider: an interactive session, or a scripted `claude -p` run for pipes and CI, beside a separate subscription terminal.
 - **Codex CLI on the same provider and the same key.** Codex 0.122 removed `wire_api = "chat"`, so a custom provider must speak the OpenAI Responses API that almost no provider serves. The proxy serves it and talks Chat Completions upstream, so `codex -p qwen` runs on your provider while plain `codex` stays on your ChatGPT subscription. See the [Codex guide](docs/codex.md).
 - **Any Anthropic-compatible provider.** MiniMax, GLM, Kimi, Alibaba, LiteLLM, vLLM, or a local gateway. Each is one small JSON template in [`examples/`](examples/); adding one is a template plus a verification run.
@@ -64,8 +64,8 @@ You need Python 3.9+, Claude Desktop, and an API key for an Anthropic-compatible
 ### 1. Clone and choose a provider
 
 ```bash
-git clone https://github.com/bogusyogi/anyclaude.git
-cd anyclaude
+git clone https://github.com/Orthic-Labs/claudecodeX.git
+cd claudecodeX
 cp examples/minimax.json config.json
 ```
 
@@ -78,7 +78,7 @@ Both helpers read the value with the echo off, so the key never lands in your sh
 macOS stores it in the login Keychain:
 
 ```bash
-./mac/save-key.sh ANYCLAUDE_MINIMAX_API_KEY
+./mac/save-key.sh CLAUDECODEX_MINIMAX_API_KEY
 ```
 
 The name you pass is the Keychain service. Put the same string in the provider's `keychain` field in `config.json`.
@@ -99,9 +99,9 @@ That name must match the provider's `key_env`. A provider may carry both fields:
 powershell -ExecutionPolicy Bypass -File windows\install.ps1
 ```
 
-This adds an **anyclaude** Desktop/Start shortcut and registers the local proxy to start at login. Open Claude normally, then open **anyclaude**. They receive separate taskbar identities and isolated profiles. See the [Windows guide](docs/windows.md) for exactly what changes and how to remove it.
+This adds an **ClaudeCodeX** Desktop/Start shortcut and registers the local proxy to start at login. Open Claude normally, then open **ClaudeCodeX**. They receive separate taskbar identities and isolated profiles. See the [Windows guide](docs/windows.md) for exactly what changes and how to remove it.
 
-Both official Windows install types are supported: Microsoft Store/MSIX and Anthropic's updater-managed Windows installer. anyclaude resolves the current signed Claude version on every launch, so the second instance follows normal Claude Desktop updates automatically.
+Both official Windows install types are supported: Microsoft Store/MSIX and Anthropic's updater-managed Windows installer. ClaudeCodeX resolves the current signed Claude version on every launch, so the second instance follows normal Claude Desktop updates automatically.
 
 #### macOS
 
@@ -114,11 +114,11 @@ python3 proxy.py
 Then install and open the isolated launcher:
 
 ```bash
-./mac/anyclaude-macos.sh --install-app
-./mac/anyclaude-macos.sh
+./mac/claudecodex-macos.sh --install-app
+./mac/claudecodex-macos.sh
 ```
 
-Open Claude normally, then open `/Applications/anyclaude.app`. See the [macOS guide](docs/macos.md) for profile isolation, login startup, and the optional ask-on-sandbox-escape policy.
+Open Claude normally, then open `/Applications/ClaudeCodeX.app`. See the [macOS guide](docs/macos.md) for profile isolation, login startup, and the optional ask-on-sandbox-escape policy.
 
 ### 4. Verify it
 
@@ -126,7 +126,7 @@ Open Claude normally, then open `/Applications/anyclaude.app`. See the [macOS gu
 curl -fsS http://127.0.0.1:8801/health
 ```
 
-`"status": "ok"` proves the local proxy is ready without spending an inference request. Open both applications and confirm the normal window shows your Anthropic model while the anyclaude window shows the Gateway model label.
+`"status": "ok"` proves the local proxy is ready without spending an inference request. Open both applications and confirm the normal window shows your Anthropic model while the ClaudeCodeX window shows the Gateway model label.
 
 <details>
 <summary><strong>Run one real provider request</strong></summary>
@@ -149,7 +149,7 @@ Claude Desktop's Gateway mode speaks the Anthropic Messages API but requires Ant
 ```text
 subscription Claude ───────────────────────────→ Anthropic
 
-isolated anyclaude Desktop ─→ 127.0.0.1:8801 ─→ your provider
+isolated ClaudeCodeX Desktop ─→ 127.0.0.1:8801 ─→ your provider
                               rename model only
 ```
 
@@ -204,7 +204,7 @@ Keep plain `claude` on your Anthropic subscription. Give the proxied route its o
 Add to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-anyclaude-code() {
+claudecodex-code() {
   ANTHROPIC_BASE_URL="http://127.0.0.1:8801" \
   ANTHROPIC_AUTH_TOKEN="router-dummy" \
   ANTHROPIC_MODEL="claude-opus-4-8" \
@@ -216,7 +216,7 @@ anyclaude-code() {
 Windows PowerShell (add to `$PROFILE`):
 
 ```powershell
-function anyclaude-code {
+function claudecodex-code {
   $env:ANTHROPIC_BASE_URL="http://127.0.0.1:8801"
   $env:ANTHROPIC_AUTH_TOKEN="router-dummy"
   $env:ANTHROPIC_MODEL="claude-opus-4-8"
@@ -225,15 +225,15 @@ function anyclaude-code {
 }
 ```
 
-Run `anyclaude-code`. `/status` shows the localhost proxy URL. It runs beside a separate subscription-backed `claude` terminal just as the two Desktop windows do.
+Run `claudecodex-code`. `/status` shows the localhost proxy URL. It runs beside a separate subscription-backed `claude` terminal just as the two Desktop windows do.
 
 ### Run Claude Code headlessly (scripted)
 
 The same function drives non-interactive runs. `claude -p` prints one response and exits, so provider-billed work goes in scripts, pipes, and CI:
 
 ```bash
-anyclaude-code -p "Summarize this diff in three bullets" < changes.patch
-git log -1 --format=%B | anyclaude-code -p "Write a release note for this commit"
+claudecodex-code -p "Summarize this diff in three bullets" < changes.patch
+git log -1 --format=%B | claudecodex-code -p "Write a release note for this commit"
 ```
 
 Because these bill to your provider, they are a cheap way to run bulk or repetitive Claude Code jobs without spending Anthropic subscription capacity. Add `--output-format json` when a script needs to parse the result.
@@ -259,10 +259,10 @@ Only providers you route to need their key set, so the file can list everything 
 Codex needs the OpenAI Responses API, which providers do not serve. The proxy serves it and translates to Chat Completions upstream. Add a `codex` block to `config.json` (see [`examples/alibaba.json`](examples/alibaba.json)), register the provider once in `~/.codex/config.toml`:
 
 ```toml
-[model_providers.anyclaude]
-name = "anyclaude (local proxy)"
+[model_providers.ClaudeCodeX]
+name = "ClaudeCodeX (local proxy)"
 base_url = "http://127.0.0.1:8801/v1"
-env_key = "ANYCLAUDE_PROXY_KEY"
+env_key = "CLAUDECODEX_PROXY_KEY"
 wire_api = "responses"
 ```
 
@@ -270,7 +270,7 @@ then put the selection in `~/.codex/qwen.config.toml`:
 
 ```toml
 model = "qwen3.7-max"
-model_provider = "anyclaude"
+model_provider = "ClaudeCodeX"
 ```
 
 ```bash
@@ -300,7 +300,7 @@ curl -fsS http://127.0.0.1:8801/v1/messages \
 Full field reference and the rule for moving a provider from untested to verified are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 <details>
-<summary><strong>Point the stock Desktop app directly at anyclaude instead</strong></summary>
+<summary><strong>Point the stock Desktop app directly at ClaudeCodeX instead</strong></summary>
 
 If you do not need simultaneous Desktop windows, open **Developer → Configure Third-Party Inference** and use:
 
@@ -325,17 +325,17 @@ Claude Desktop can inject a managed sandbox policy that allows only Anthropic an
 
 ### A folder is skipped because it is protected or is the home/root directory
 
-Older launchers let Claude Code or Cowork state overlap the selected workspace. Current launchers place Desktop, Claude Code, and default Cowork state inside the isolated anyclaude profile on both Windows and macOS.
+Older launchers let Claude Code or Cowork state overlap the selected workspace. Current launchers place Desktop, Claude Code, and default Cowork state inside the isolated ClaudeCodeX profile on both Windows and macOS.
 
 ### Desktop “Test connection” fails
 
 Many gateways do not expose `/v1/models`, which Desktop probes. Use `/health`, the real Messages API request above, or confirm `status=200` in `proxy.log`.
 
-### Your skills or subagents are missing in the anyclaude window
+### Your skills or subagents are missing in the ClaudeCodeX window
 
 Both launchers link `~/.claude/skills` and `~/.claude/agents` into the isolated profile on every start, so the library you already have resolves in both instances. If a skill is still missing, confirm it exists in `~/.claude` and that nothing has replaced the link with a real directory, which the launcher will not overwrite.
 
-`settings.json` is deliberately not linked. It commonly pins an Anthropic-only model name, which the gateway provider does not serve, so sharing it would break the second instance. The cost is that hooks defined there do not run in the anyclaude window. Set `ANYCLAUDE_SHARE_CLAUDE_CODE=0` if you want a fully sealed profile with no sharing at all.
+`settings.json` is deliberately not linked. It commonly pins an Anthropic-only model name, which the gateway provider does not serve, so sharing it would break the second instance. The cost is that hooks defined there do not run in the ClaudeCodeX window. Set `CLAUDECODEX_SHARE_CLAUDE_CODE=0` if you want a fully sealed profile with no sharing at all.
 
 ### A `Claude-3p` directory appears
 

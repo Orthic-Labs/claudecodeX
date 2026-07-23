@@ -1,4 +1,4 @@
-# anyclaude installer (Windows). Creates the Desktop + Start Menu shortcut and
+# claudecodex installer (Windows). Creates the Desktop + Start Menu shortcut and
 # registers the proxy to start hidden at login. Re-runnable (idempotent).
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -14,27 +14,27 @@ if (-not (Test-Path (Join-Path $root 'config.json'))) {
     Write-Warning "No config.json yet — copy one from examples\ and set your key's env var first (see README)."
 }
 
-$vbs   = Join-Path $PSScriptRoot 'anyclaude.vbs'
+$vbs   = Join-Path $PSScriptRoot 'claudecodex.vbs'
 $icon  = $claude.IconResource
 $sh    = New-Object -ComObject WScript.Shell
 
 foreach ($dir in @("$env:USERPROFILE\Desktop", "$env:APPDATA\Microsoft\Windows\Start Menu\Programs")) {
-    $lnk = $sh.CreateShortcut((Join-Path $dir 'anyclaude.lnk'))
+    $lnk = $sh.CreateShortcut((Join-Path $dir 'claudecodex.lnk'))
     $lnk.TargetPath       = Join-Path $env:WINDIR 'System32\wscript.exe'
     $lnk.Arguments        = """$vbs"""
     $lnk.IconLocation     = $icon
-    $lnk.Description       = 'Claude Desktop on your gateway model (anyclaude)'
+    $lnk.Description       = 'Claude Desktop on your gateway model (claudecodex)'
     $lnk.WorkingDirectory = $root
     $lnk.Save()
-    Write-Host "shortcut -> $dir\anyclaude.lnk"
+    Write-Host "shortcut -> $dir\claudecodex.lnk"
 }
 
 # Start the proxy hidden at login (a .vbs in the Startup folder, windowless).
 $startup = [Environment]::GetFolderPath('Startup')
-$pxVbs = Join-Path $startup 'anyclaude-proxy.vbs'
+$pxVbs = Join-Path $startup 'claudecodex-proxy.vbs'
 @"
 Set sh = CreateObject("WScript.Shell")
 sh.Run "pythonw.exe ""$root\proxy.py""", 0, False
 "@ | Set-Content -Encoding ASCII $pxVbs
 Write-Host "proxy autostart -> $pxVbs"
-Write-Host "`nDone. Set your API key env var (see README), then click the anyclaude shortcut."
+Write-Host "`nDone. Set your API key env var (see README), then click the claudecodex shortcut."

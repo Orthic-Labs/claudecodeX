@@ -30,7 +30,7 @@ class ProxyHealthTest(unittest.TestCase):
                     "prefix": "/anthropic",
                     "scheme": "http",
                     "auth_header": "x-api-key",
-                    "key_env": "ANYCLAUDE_TEST_KEY",
+                    "key_env": "CLAUDECODEX_TEST_KEY",
                 },
                 "models": {
                     "default": {"name": "test-model", "thinking": None}
@@ -38,7 +38,7 @@ class ProxyHealthTest(unittest.TestCase):
             }
             config_path = root / "config.json"
             config_path.write_text(json.dumps(config))
-            env = {**os.environ, "ANYCLAUDE_TEST_KEY": "not-a-real-key"}
+            env = {**os.environ, "CLAUDECODEX_TEST_KEY": "not-a-real-key"}
             process = subprocess.Popen(
                 [sys.executable, str(root / "proxy.py"), str(config_path)],
                 stdout=subprocess.DEVNULL,
@@ -122,10 +122,10 @@ class CodexResponsesTest(unittest.TestCase):
         config = {
             "port": self.port,
             "upstream": {"host": "127.0.0.1:9", "prefix": "/anthropic", "scheme": "http",
-                         "auth_header": "x-api-key", "key_env": "ANYCLAUDE_TEST_KEY"},
+                         "auth_header": "x-api-key", "key_env": "CLAUDECODEX_TEST_KEY"},
             "models": {"default": {"name": "test-model", "thinking": None}},
             "codex": {"host": f"127.0.0.1:{self.upstream_port}", "prefix": "", "scheme": "http",
-                      "auth_header": "authorization", "key_env": "ANYCLAUDE_TEST_KEY",
+                      "auth_header": "authorization", "key_env": "CLAUDECODEX_TEST_KEY",
                       "models": {"gpt-": {"name": "qwen3.7-max"}}},
         }
         config_path = self.root / "config.json"
@@ -133,7 +133,7 @@ class CodexResponsesTest(unittest.TestCase):
         self.process = subprocess.Popen(
             [sys.executable, str(self.root / "proxy.py"), str(config_path)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            env={**os.environ, "ANYCLAUDE_TEST_KEY": "not-a-real-key"})
+            env={**os.environ, "CLAUDECODEX_TEST_KEY": "not-a-real-key"})
         self.addCleanup(self._stop)
         self._wait_ready()
 
@@ -221,13 +221,13 @@ class CodexNotConfiguredTest(unittest.TestCase):
         config_path.write_text(json.dumps({
             "port": port,
             "upstream": {"host": "127.0.0.1:9", "prefix": "", "scheme": "http",
-                         "auth_header": "x-api-key", "key_env": "ANYCLAUDE_TEST_KEY"},
+                         "auth_header": "x-api-key", "key_env": "CLAUDECODEX_TEST_KEY"},
             "models": {"default": {"name": "test-model", "thinking": None}},
         }))
         process = subprocess.Popen(
             [sys.executable, str(root / "proxy.py"), str(config_path)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            env={**os.environ, "ANYCLAUDE_TEST_KEY": "not-a-real-key"})
+            env={**os.environ, "CLAUDECODEX_TEST_KEY": "not-a-real-key"})
         self.addCleanup(lambda: (process.terminate(), process.wait(timeout=5)))
         for _ in range(80):
             try:

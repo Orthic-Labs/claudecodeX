@@ -1,8 +1,8 @@
-# AGENTS.md: anyclaude
+# AGENTS.md: ClaudeCodeX
 
 ## Product contract
 
-`anyclaude` lets Claude Code, Claude Desktop, or Codex CLI use a third-party provider. For Claude it translates incoming Anthropic-shaped model names into provider model names. For Codex it serves the OpenAI Responses API that Codex requires and translates to Chat Completions upstream. Keep the proxy local, provider-neutral, standard-library only, and explicit about what has actually been tested.
+`ClaudeCodeX` lets Claude Code, Claude Desktop, or Codex CLI use a third-party provider. For Claude it translates incoming Anthropic-shaped model names into provider model names. For Codex it serves the OpenAI Responses API that Codex requires and translates to Chat Completions upstream. Keep the proxy local, provider-neutral, standard-library only, and explicit about what has actually been tested.
 
 ## Repository map
 
@@ -12,7 +12,7 @@
 - `docs/codex.md`: Codex setup, capability table, troubleshooting
 - `examples/*.json`: provider templates; unverified providers must stay labeled untested
 - `configLibrary/`: secret-free Claude Desktop Gateway seed
-- `mac/anyclaude-macos.sh`: isolated macOS Desktop launcher
+- `mac/claudecodex-macos.sh`: isolated macOS Desktop launcher
 - `windows/`: Windows launcher, installer, and taskbar separation
 - `docs/windows.md`: Windows simultaneous-use, isolation, and removal guide
 - `docs/macos.md`: Mac isolation and managed-sandbox policy
@@ -40,7 +40,7 @@ Run before proposing a change:
 ```bash
 python3 -m py_compile proxy.py codex_bridge.py
 python3 -m unittest discover -s tests -v
-sh -n mac/anyclaude-macos.sh mac/save-key.sh
+sh -n mac/claudecodex-macos.sh mac/save-key.sh
 for file in examples/*.json configLibrary/*.json; do
   python3 -m json.tool "$file" >/dev/null || exit 1
 done
