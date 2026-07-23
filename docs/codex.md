@@ -58,24 +58,23 @@ a pointer to this page instead of failing silently.
 Add to `~/.codex/config.toml`:
 
 ```toml
-[model_providers.ClaudeCodeX]
-name = "ClaudeCodeX (local proxy)"
+[model_providers.claudecodex]
+name = "claudecodeX (local proxy)"
 base_url = "http://127.0.0.1:8801/v1"
-env_key = "CLAUDECODEX_PROXY_KEY"
+experimental_bearer_token = "proxy-dummy"
 wire_api = "responses"
 request_max_retries = 2
 stream_max_retries = 2
 stream_idle_timeout_ms = 300000
 ```
 
-`env_key` must name a variable that exists, but the proxy holds the real key, so a
-placeholder is correct here:
+The real provider key lives in the proxy, so the token here is only a
+placeholder. Use `experimental_bearer_token` rather than `env_key`: GUI
+applications do not read shell profiles, so Codex Desktop would never see an
+environment variable and would fail with "auth env var is missing".
 
-```bash
-./mac/save-key.sh CLAUDECODEX_PROXY_KEY      # enter: proxy-dummy
-```
-
-This block is inert. Codex keeps using your subscription until a profile selects it.
+This block is inert. Codex keeps using your subscription until something
+selects the provider.
 
 ### 3. Add a profile
 
@@ -84,7 +83,7 @@ Codex layers `$CODEX_HOME/<name>.config.toml` over the base config when you pass
 
 ```toml
 model = "qwen3.7-max"
-model_provider = "ClaudeCodeX"
+model_provider = "claudecodex"
 ```
 
 ## Can one Codex hold your subscription and third-party models at once?

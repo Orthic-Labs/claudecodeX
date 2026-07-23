@@ -10,3 +10,4 @@ __pycache__/
 # Key material must never land here — belt and braces.
 *.key
 .env
+.DS_Store
