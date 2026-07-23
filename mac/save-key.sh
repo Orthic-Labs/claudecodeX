@@ -1,30 +1,45 @@
 #!/bin/sh
-# Save a provider key into the macOS login Keychain.
+# Save a provider key into the macOS login Keychain, and optionally expose it as
+# an environment variable.
 #
 #   ./mac/save-key.sh CLAUDECODEX_MINIMAX_API_KEY
-#   ./mac/save-key.sh CLAUDECODEX_DASHSCOPE_API_KEY
+#   ./mac/save-key.sh CLAUDECODEX_MINIMAX_API_KEY MINIMAX_API_KEY
 #
-# The name you pass is the Keychain SERVICE name. Put the same string in your
-# config.json as the provider's "keychain" field and the proxy reads it from
-# there, so the key never lives in a dotfile, a plist, your shell history, or
-# `ps` output. Re-running updates the stored value in place.
+# The first argument is the Keychain SERVICE name. Put the same string in your
+# config.json as the provider's "keychain" field.
+#
+# The optional second argument is an environment variable name. It does NOT
+# write a second copy of the key: it appends a line to ~/.zprofile that reads
+# the value back out of the Keychain at shell start. One stored secret, two ways
+# to reach it, so rotating the Keychain item rotates the variable too.
+#
+# The Keychain item lives in ~/Library/Keychains/login.keychain-db on your
+# internal disk. It has nothing to do with where this script or the repository
+# is stored, and it survives unmounting any external volume.
 #
 # `-T /usr/bin/security` grants the `security` tool access up front, so the proxy
 # reads the item without a Keychain prompt on every start.
 set -eu
 
 SERVICE="${1:-}"
+ENV_NAME="${2:-}"
 if [ -z "$SERVICE" ]; then
-  echo "usage: $0 KEYCHAIN_SERVICE_NAME" >&2
-  echo "example: $0 CLAUDECODEX_MINIMAX_API_KEY" >&2
+  echo "usage: $0 KEYCHAIN_SERVICE [ENV_VAR_NAME]" >&2
+  echo "example: $0 CLAUDECODEX_MINIMAX_API_KEY MINIMAX_API_KEY" >&2
   exit 2
 fi
-ACCOUNT="${2:-$USER}"
+for name in "$SERVICE" ${ENV_NAME:+"$ENV_NAME"}; do
+  case "$name" in
+    *[!A-Za-z0-9_]*) echo "invalid name: $name" >&2; exit 2 ;;
+  esac
+done
 
 [ "$(uname -s)" = "Darwin" ] || {
   echo "this helper is macOS only; on Windows use windows\\save-key.ps1" >&2
   exit 2
 }
+
+ACCOUNT="${CLAUDECODEX_KEY_ACCOUNT:-$USER}"
 
 printf 'Paste the value for %s (input hidden): ' "$SERVICE" >&2
 stty -echo 2>/dev/null || true
@@ -45,10 +60,23 @@ security add-generic-password \
   -w "$VALUE"
 
 # Prove it reads back before reporting success, without printing the value.
-if [ "$(security find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w)" = "$VALUE" ]; then
-  echo "Saved to Keychain: service '$SERVICE', account '$ACCOUNT'." >&2
-  echo "Add \"keychain\": \"$SERVICE\" to that provider in config.json, then restart the proxy." >&2
-else
+if [ "$(security find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w)" != "$VALUE" ]; then
   echo "wrote the item but could not read it back; check Keychain Access" >&2
   exit 1
 fi
+echo "Keychain: service '$SERVICE', account '$ACCOUNT'." >&2
+
+if [ -n "$ENV_NAME" ]; then
+  PROFILE="$HOME/.zprofile"
+  LINE="export ${ENV_NAME}=\"\$(security find-generic-password -s ${SERVICE} -a ${ACCOUNT} -w 2>/dev/null)\""
+  touch "$PROFILE"
+  TMP="$(mktemp "${TMPDIR:-/tmp}/claudecodex-key.XXXXXX")"
+  trap 'rm -f "$TMP"' EXIT
+  grep -v "^export ${ENV_NAME}=" "$PROFILE" > "$TMP" || true
+  printf '%s\n' "$LINE" >> "$TMP"
+  cat "$TMP" > "$PROFILE"
+  echo "Environment: \$${ENV_NAME} in ${PROFILE}, read from the Keychain at shell start." >&2
+  echo "Load it into this shell with:  . ${PROFILE}" >&2
+fi
+
+echo "Then restart the proxy:  launchctl kickstart -k gui/\$(id -u)/com.adrian.claudecodex-proxy" >&2
