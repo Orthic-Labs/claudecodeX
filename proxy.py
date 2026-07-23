@@ -328,11 +328,11 @@ class Handler(BaseHTTPRequestHandler):
                     data.pop("max_tokens", None)
                     data.pop("stream", None)
                 else:
-                    policy = spec.get("thinking")   # "adaptive" | "disabled" | None
+                    policy = spec.get("thinking")   # "adaptive" | "enabled" | "disabled" | None
                     if policy == "adaptive" and is_small_probe(data):
                         policy = "disabled"
                     think = policy or "none"
-                    if policy in ("adaptive", "disabled"):
+                    if policy in ("adaptive", "enabled", "disabled"):
                         data["thinking"] = {"type": policy}
                     else:
                         data.pop("thinking", None)

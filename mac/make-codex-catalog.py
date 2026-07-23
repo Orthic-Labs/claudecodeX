@@ -30,7 +30,7 @@ def main():
     ap.add_argument("--template", default=str(pathlib.Path.home() / ".codex" / "models_cache.json"))
     args = ap.parse_args()
 
-    cache = json.loads(pathlib.Path(args.template).read_text())["models"]
+    cache = json.loads(pathlib.Path(args.template).read_text(encoding="utf-8"))["models"]
     template = next(m for m in cache if m["slug"] == "gpt-5.6-terra")
 
     out = []

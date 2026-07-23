@@ -5,22 +5,29 @@
   "modelDiscoveryEnabled": false,
   "inferenceModels": [
     {
+      "name": "claude-fable-5",
+      "labelOverride": "Fable (Qwen 3.8 Max)",
+      "supports1m": false,
+      "anthropicFamilyTier": "fable",
+      "isFamilyDefault": true
+    },
+    {
       "name": "claude-opus-4-8",
-      "labelOverride": "MiniMax M3",
+      "labelOverride": "Opus (GLM 5.2)",
       "supports1m": false,
       "anthropicFamilyTier": "opus",
       "isFamilyDefault": true
     },
     {
-      "name": "claude-sonnet-5",
-      "labelOverride": "MiniMax M3 (Sonnet slot)",
+      "name": "claude-sonnet-4-5",
+      "labelOverride": "Sonnet (MiniMax M3)",
       "supports1m": false,
       "anthropicFamilyTier": "sonnet",
       "isFamilyDefault": true
     },
     {
-      "name": "claude-haiku-4-5-20251001",
-      "labelOverride": "MiniMax M3 (fast)",
+      "name": "claude-haiku-4-5",
+      "labelOverride": "Haiku (DeepSeek V4 Pro)",
       "supports1m": false,
       "anthropicFamilyTier": "haiku",
       "isFamilyDefault": true

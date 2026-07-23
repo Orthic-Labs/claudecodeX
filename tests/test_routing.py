@@ -34,6 +34,7 @@ class RecordingUpstream(http.server.BaseHTTPRequestHandler):
         RecordingUpstream.calls.append({
             "path": self.path,
             "model": body.get("model"),
+            "thinking": body.get("thinking"),
             "authorization": self.headers.get("authorization"),
             "x-api-key": self.headers.get("x-api-key"),
         })
@@ -84,6 +85,7 @@ class MultiProviderRoutingTest(unittest.TestCase):
                          "auth": "passthrough"},
             },
             "models": {
+                "fable": {"provider": "alpha", "name": "flagship-model", "thinking": "enabled"},
                 "haiku": {"provider": "alpha", "name": "small-model", "thinking": "disabled"},
                 "sonnet": {"provider": "beta", "name": "big-model", "thinking": "adaptive"},
                 "default": {"provider": "mine", "name": "passthrough"},
@@ -116,11 +118,11 @@ class MultiProviderRoutingTest(unittest.TestCase):
             server.server_close()
         shutil.rmtree(cls.root, ignore_errors=True)
 
-    def _messages(self, model, headers=None):
+    def _messages(self, model, headers=None, max_tokens=16):
         RecordingUpstream.calls.clear()
         request = urllib.request.Request(
             f"http://127.0.0.1:{self.port}/v1/messages",
-            data=json.dumps({"model": model, "max_tokens": 16,
+            data=json.dumps({"model": model, "max_tokens": max_tokens,
                              "messages": [{"role": "user", "content": "hi"}]}).encode(),
             headers={"Content-Type": "application/json", **(headers or {})})
         with urllib.request.urlopen(request, timeout=5) as response:
@@ -145,6 +147,11 @@ class MultiProviderRoutingTest(unittest.TestCase):
         sonnet = self._messages("claude-sonnet-5")
         self.assertEqual(sonnet["model"], "big-model")
         self.assertEqual(sonnet["authorization"], "Bearer key-b")
+
+    def test_enabled_thinking_reaches_upstream(self):
+        fable = self._messages("claude-fable-5", max_tokens=128)
+        self.assertEqual(fable["model"], "flagship-model")
+        self.assertEqual(fable["thinking"], {"type": "enabled"})
 
     def test_passthrough_route_forwards_the_callers_own_credentials(self):
         call = self._messages("claude-opus-4-8",

@@ -18,7 +18,9 @@ $vbs   = Join-Path $PSScriptRoot 'claudecodex.vbs'
 $icon  = $claude.IconResource
 $sh    = New-Object -ComObject WScript.Shell
 
-foreach ($dir in @("$env:USERPROFILE\Desktop", "$env:APPDATA\Microsoft\Windows\Start Menu\Programs")) {
+$desktop = [Environment]::GetFolderPath('Desktop')
+$programs = [Environment]::GetFolderPath('Programs')
+foreach ($dir in @($desktop, $programs)) {
     $lnk = $sh.CreateShortcut((Join-Path $dir 'claudecodex.lnk'))
     $lnk.TargetPath       = Join-Path $env:WINDIR 'System32\wscript.exe'
     $lnk.Arguments        = """$vbs"""
