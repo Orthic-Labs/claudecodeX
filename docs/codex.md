@@ -86,6 +86,39 @@ model = "qwen3.7-max"
 model_provider = "claudecodex"
 ```
 
+## Making the models selectable, not just reachable
+
+Both CLIs reach any configured model through a flag. Seeing them in the picker
+takes one more step, and it differs per tool.
+
+**Codex** builds its picker from `model_catalog_json`, so the isolated instance
+lists every proxied model directly:
+
+```bash
+codexx            # CODEX_HOME=~/.codex-proxy, /model lists all nine
+codexx -m glm-5.2
+```
+
+**Claude Code** cannot be extended that way: its `/model` picker has fixed
+Opus/Sonnet/Haiku slots. What each slot calls is decided by
+`ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` and
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`, so pointing the slots at different providers is
+what turns the picker into a provider switch:
+
+```bash
+ccx     # Opus slot = MiniMax-M3, Sonnet = qwen3.7-max, Haiku = glm-5.2
+```
+
+Verified live, one request per slot:
+
+```
+opus   -> minimax:MiniMax-M3
+sonnet -> alibaba:qwen3.7-max
+haiku  -> alibaba:glm-5.2
+```
+
+The slot names stay Anthropic's; only what they call changes.
+
 ## Can one Codex hold your subscription and third-party models at once?
 
 No. The Codex core has two auth modes and only one of them is configurable:
