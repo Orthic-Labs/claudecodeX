@@ -1,6 +1,6 @@
 {
-  "_comment": "Several providers behind one proxy. Each route names its own provider, so one Claude window or one Codex session can reach MiniMax, Alibaba, and your real Anthropic subscription at the same time. Only the providers you actually route to need their key set. Note the port: 8801 is often already taken by another local proxy.",
-  "port": 8810,
+  "_comment": "Several providers behind one proxy. Each route names its own provider, so one Claude window or one Codex session can reach MiniMax, Alibaba, and your real Anthropic subscription at the same time. Only the providers you actually route to need their key set. Port 8801 is the convention across this project; the launchd agent uses it.",
+  "port": 8801,
   "providers": {
     "anthropic": {
       "_comment": "Your real subscription. \"passthrough\" forwards the caller's own credentials, so the proxy never needs an Anthropic key of its own.",
