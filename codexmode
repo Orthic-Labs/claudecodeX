@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Switch Codex (CLI and Desktop) between the ChatGPT subscription and the local
+claudecodeX proxy.
+
+    codexmode proxy    -> MiniMax / Qwen / GLM / DeepSeek / Kimi
+    codexmode openai   -> back to the ChatGPT subscription
+    codexmode status
+
+Codex binds ONE model_provider per install and the Desktop app has no profile
+picker, so the setting must live at the top level of config.toml. Top-level keys
+must be REPLACED, not appended: Codex takes the first occurrence, so an appended
+duplicate is silently ignored.
+"""
+import os
+import pathlib
+import re
+import sys
+
+HOME = pathlib.Path(os.environ.get("CODEX_HOME") or (pathlib.Path.home() / ".codex"))
+CONFIG = HOME / "config.toml"
+CATALOG = HOME / "model-catalogs" / "claudecodex.json"
+KEYS = ("model", "model_provider", "model_catalog_json")
+PREV = "# codexmode-previous-model = "
+
+
+def split_top_level(text):
+    """Return (top_level_lines, rest). Top level ends at the first [table]."""
+    lines = text.splitlines(True)
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("["):
+            return lines[:i], lines[i:]
+    return lines, []
+
+
+def load():
+    text = CONFIG.read_text()
+    top, rest = split_top_level(text)
+    previous = None
+    kept = []
+    for line in top:
+        if line.startswith(PREV):
+            previous = line[len(PREV):].strip()
+            continue
+        if any(re.match(rf"{k}\s*=", line) for k in KEYS):
+            continue
+        kept.append(line)
+    current = {}
+    for line in top:
+        m = re.match(r"(\w+)\s*=\s*(.+?)\s*$", line)
+        if m and m.group(1) in KEYS:
+            current.setdefault(m.group(1), m.group(2))
+    return kept, rest, current, previous
+
+
+def write(top, rest):
+    body = "".join(top).rstrip("\n") + "\n"
+    CONFIG.write_text(body + "".join(rest))
+
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "status"
+    if not CONFIG.is_file():
+        sys.exit(f"no config at {CONFIG}")
+    kept, rest, current, previous = load()
+
+    if action == "proxy":
+        if not CATALOG.is_file():
+            sys.exit(f"missing catalog: {CATALOG}")
+        keep_prev = previous or current.get("model") or '"gpt-5.6-sol"'
+        block = [
+            f'{PREV}{keep_prev}\n',
+            'model = "MiniMax-M3"\n',
+            'model_provider = "claudecodex"\n',
+            f'model_catalog_json = "{CATALOG}"\n',
+        ]
+        write(block + kept, rest)
+        print("Codex -> claudecodeX proxy. Fully quit and reopen Codex Desktop.")
+    elif action == "openai":
+        restore = previous or '"gpt-5.6-sol"'
+        write([f"model = {restore}\n"] + kept, rest)
+        print("Codex -> ChatGPT subscription. Fully quit and reopen Codex Desktop.")
+    elif action == "status":
+        if current.get("model_provider") == '"claudecodex"':
+            import json
+            slugs = [m["slug"] for m in json.loads(CATALOG.read_text())["models"]]
+            print("proxy  | models: " + ", ".join(slugs))
+        else:
+            print(f"openai | model {current.get('model', '(default)')}")
+    else:
+        sys.exit("usage: codexmode [proxy|openai|status]")
+
+
+if __name__ == "__main__":
+    main()

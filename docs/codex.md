@@ -87,7 +87,55 @@ model = "qwen3.7-max"
 model_provider = "ClaudeCodeX"
 ```
 
-### 3b. One profile per provider
+### 3a. Codex Desktop needs the BASE config, not a profile
+
+The Desktop app bundles the same Codex core and reads the same
+`~/.codex/config.toml`, but it has **no profile picker**. A `model_provider`
+that lives in `~/.codex/<name>.config.toml` is therefore unreachable from
+Desktop, and its model list never changes no matter what the profile says.
+
+Desktop needs three keys at the **top level** of `config.toml`:
+
+```toml
+model = "MiniMax-M3"
+model_provider = "claudecodex"
+model_catalog_json = "/Users/you/.codex/model-catalogs/claudecodex.json"
+```
+
+Two traps make this fail silently:
+
+- **Top-level keys must be replaced, not appended.** Codex takes the first
+  occurrence of a duplicate key, so adding a second `model =` at the end of the
+  file is ignored without any error.
+- **Do not use `env_key` for the proxy credential.** GUI applications do not
+  read `~/.zshrc`, `~/.zprofile`, or `~/.zshenv`, so Desktop would never see the
+  variable and fails with "auth env var is missing". Use
+  `experimental_bearer_token` instead; the real provider key lives in the proxy,
+  so this value is only a placeholder.
+
+```toml
+[model_providers.claudecodex]
+name = "claudecodeX (local proxy)"
+base_url = "http://127.0.0.1:8801/v1"
+experimental_bearer_token = "proxy-dummy"
+wire_api = "responses"
+```
+
+Because one install binds one provider, switching is a toggle. `codexmode`
+handles the replacement safely and remembers the model you came from:
+
+```bash
+./codexmode proxy     # MiniMax, Qwen, GLM, DeepSeek, Kimi
+./codexmode openai    # back to your ChatGPT subscription
+./codexmode status
+```
+
+Fully quit and reopen Codex Desktop after switching. Verify with
+`codex --strict-config doctor`, which prints the resolved
+`default model provider`; that resolved value, not the file contents, is what
+Desktop uses.
+
+### 3b. One profile per provider (CLI only)
 
 Codex binds a single `model_provider` per session, so it cannot show your
 subscription models and proxied models in one picker. Profiles are the way
