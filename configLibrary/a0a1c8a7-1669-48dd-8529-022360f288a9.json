@@ -6,21 +6,21 @@
   "inferenceModels": [
     {
       "name": "claude-opus-4-8",
-      "labelOverride": "Gateway (thinking)",
+      "labelOverride": "MiniMax M3",
       "supports1m": false,
       "anthropicFamilyTier": "opus",
       "isFamilyDefault": true
     },
     {
       "name": "claude-sonnet-5",
-      "labelOverride": "Gateway (thinking)",
+      "labelOverride": "MiniMax M3 (Sonnet slot)",
       "supports1m": false,
       "anthropicFamilyTier": "sonnet",
       "isFamilyDefault": true
     },
     {
       "name": "claude-haiku-4-5-20251001",
-      "labelOverride": "Gateway (fast)",
+      "labelOverride": "MiniMax M3 (fast)",
       "supports1m": false,
       "anthropicFamilyTier": "haiku",
       "isFamilyDefault": true

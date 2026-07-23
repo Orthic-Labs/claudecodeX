@@ -87,7 +87,40 @@ model = "qwen3.7-max"
 model_provider = "ClaudeCodeX"
 ```
 
-### 3a. Codex Desktop needs the BASE config, not a profile
+## Can one Codex hold your subscription and third-party models at once?
+
+No. The Codex core has two auth modes and only one of them is configurable:
+
+| Mode | Endpoint | Redirectable? |
+|---|---|---|
+| `ChatGPT` (a subscription login) | `chatgpt.com/backend-api/codex` | No. OAuth-bound. |
+| `ApiKey` | `openai_base_url` | Yes. |
+
+Guides that show every model in one picker are running in **ApiKey** mode, where
+pointing `openai_base_url` at a proxy captures all traffic. On a ChatGPT
+subscription that key is simply not consulted, so no proxy can merge the two
+without holding your OAuth token itself.
+
+Switching `model_provider` on your primary install is also destructive in a way
+that is easy to miss: Codex scopes chat history to the active provider, so your
+existing threads vanish from the sidebar until you switch back. They are not
+deleted, just filtered.
+
+Use two instances instead. `CODEX_HOME` gives the second one its own config and
+its own history, the way `CLAUDE_USER_DATA_DIR` does for Claude Desktop:
+
+```bash
+./mac/codex-second-instance.sh --install   # seed ~/.codex-proxy
+./mac/codex-second-instance.sh --tui       # second Codex, all proxied models
+```
+
+Your primary Codex keeps its subscription, its picker, and its chats untouched.
+
+One limitation worth stating plainly: Codex Desktop enforces a single instance,
+so the second one runs in the terminal. Launching the app binary again only
+re-activates the existing window.
+
+### 3a. Pointing your PRIMARY Codex at the proxy instead
 
 The Desktop app bundles the same Codex core and reads the same
 `~/.codex/config.toml`, but it has **no profile picker**. A `model_provider`
