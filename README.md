@@ -203,6 +203,8 @@ Only MiniMax is currently verified. The other entries are compatible configurati
 
 The Alibaba template is the reference for a provider that serves both protocols from one key: `/apps/anthropic` for Claude and `/compatible-mode/v1` for Codex. Its Token Plan carries Qwen plus DeepSeek, GLM, Kimi, and MiniMax models, so one subscription covers both windows.
 
+Alibaba documents only Qwen ids on the Anthropic endpoint, but it serves the other Token Plan families too. Verified through `/v1/messages`: `qwen3.7-max`, `glm-5.2` and `deepseek-v4-pro` each answered under their own id. That matters because it is what lets one Claude window reach every model in the plan, not just Qwen.
+
 **Adding a provider is a JSON template plus a verification run.** Any Anthropic-compatible endpoint can be a new row here. See [CONTRIBUTING.md](CONTRIBUTING.md) for the template fields, the `/v1/messages` check that counts as proof, and how to move a row from untested to verified.
 
 ## How-tos
