@@ -87,6 +87,38 @@ model = "qwen3.7-max"
 model_provider = "ClaudeCodeX"
 ```
 
+### 3b. One profile per provider
+
+Codex binds a single `model_provider` per session, so it cannot show your
+subscription models and proxied models in one picker. Profiles are the way
+around that: the provider block is shared, and each profile picks a model.
+
+`~/.codex/mm.config.toml`:
+
+```toml
+model = "MiniMax-M3"
+model_provider = "claudecodex"
+```
+
+`~/.codex/qwen.config.toml`:
+
+```toml
+model = "qwen3.7-max"
+model_provider = "claudecodex"
+```
+
+```bash
+codex            # your ChatGPT subscription, untouched
+codex -p mm      # MiniMax
+codex -p qwen    # Alibaba
+```
+
+The proxy routes on the model name, so both profiles reach different providers
+through the same port and the same provider block. To make the models appear in
+the picker rather than only working through `-m`, point `model_catalog_json` at
+a catalog file; note that it replaces the built-in list rather than merging, so
+keep it on the profile and not in the base config.
+
 ### 4. Run both
 
 ```bash
